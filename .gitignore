@@ -1,4 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+﻿# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -32,10 +32,22 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+.dev.vars*
 
 # vercel
 .vercel
 
+# cloudflare local dev
+.wrangler/
+
+# Local deployment artifacts and temporary access material
+/tmp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/test-artifacts/
+*.log
+/tmp/

@@ -1,0 +1,41 @@
+﻿services:
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/tencent/Dockerfile
+    command: npm run start
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_BASE: /api
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/tencent/Dockerfile
+    command: npm run api:tencent
+    env_file:
+      - ../../.env.tencent
+    environment:
+      NODE_ENV: production
+      APP_ENV: production
+      API_PORT: 8789
+      LOCAL_STORAGE_DIR: /data/uploads
+    volumes:
+      - shanyuan_uploads:/data/uploads
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - web
+      - api
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
+volumes:
+  shanyuan_uploads:

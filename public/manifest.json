@@ -1,0 +1,19 @@
+{
+  "name": "善缘阁",
+  "short_name": "善缘阁",
+  "description": "心诚则灵。为家人点一盏祈福灯，求一支关帝灵签，看一卦命理八字。",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#120f0b",
+  "theme_color": "#120f0b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

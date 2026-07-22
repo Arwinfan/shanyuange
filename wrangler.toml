@@ -1,0 +1,21 @@
+name = "putiyuan"
+compatibility_date = "2026-06-29"
+pages_build_output_dir = ".next"
+
+# D1 Database binding (local dev)
+[[d1_databases]]
+binding = "DB"
+database_name = "putiyuan-db"
+database_id = "local-dev"
+
+# R2 Bucket binding (reserved for images)
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "putiyuan-images"
+
+[env.production]
+# Production D1 binding (set via dashboard)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "putiyuan-db"
+# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"

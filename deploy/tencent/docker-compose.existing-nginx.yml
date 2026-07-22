@@ -1,0 +1,14 @@
+services:
+  web:
+    ports:
+      - "127.0.0.1:${SHANYUAN_WEB_PORT:-13000}:3000"
+
+  api:
+    ports:
+      - "127.0.0.1:${SHANYUAN_API_PORT:-18790}:8789"
+
+  # The host already owns ports 80/443. Keep this bundled Nginx service
+  # disabled unless the standalone profile is explicitly requested.
+  nginx:
+    profiles:
+      - standalone

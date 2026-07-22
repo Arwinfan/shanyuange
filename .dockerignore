@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.wrangler
+*.log
+.env*
+.dev.vars*
+test-artifacts
+tmp
