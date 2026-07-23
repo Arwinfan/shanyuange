@@ -158,6 +158,18 @@ export function getAiRuntimeStatus(env: any) {
   };
 }
 
+// Public health endpoints must not reveal model names, provider details, or request activity.
+export function getPublicAiRuntimeStatus(env: any) {
+  const status = getAiRuntimeStatus(env);
+  const ready = status.enabled && status.textModelConfigured;
+
+  return {
+    status: !status.enabled ? "disabled" : ready ? "ok" : "degraded",
+    textReady: status.textModelConfigured,
+    imageReady: status.imageModelConfigured,
+  };
+}
+
 function parseJsonObject(text: string) {
   try {
     return JSON.parse(text);

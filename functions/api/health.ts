@@ -1,5 +1,5 @@
-import { appEnvironment, handleOptions, isMockDbAllowed, isMockPaymentAllowed, isMockSmsAllowed, ok, fail } from "../_shared";
-import { getAiRuntimeStatus } from "../_llm";
+import { getSiteTrial, handleOptions, isMockDbAllowed, ok, fail } from "../_shared";
+import { getPublicAiRuntimeStatus } from "../_llm";
 
 async function checkD1(db: any) {
   if (!db) return { status: "missing" };
@@ -21,14 +21,11 @@ export async function onRequestGet(context: any) {
   const payload = {
     status: healthy ? "ok" : "degraded",
     time: new Date().toISOString(),
-    environment: appEnvironment(env),
+    trial: getSiteTrial(env),
     services: {
       db,
-      mockDb: { allowed: mockAllowed },
-      localPayment: { allowed: isMockPaymentAllowed(env), provider: env.PAYMENT_PROVIDER || "local" },
-      localSms: { allowed: isMockSmsAllowed(env) },
-      objectStorage: { provider: env.STORAGE_PROVIDER || "r2", status: env.R2 ? "ok" : "missing" },
-      ai: getAiRuntimeStatus(env),
+      objectStorage: { status: env.R2 ? "ok" : "missing" },
+      ai: getPublicAiRuntimeStatus(env),
     },
   };
 
