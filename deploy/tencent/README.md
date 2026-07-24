@@ -58,3 +58,15 @@ systemctl list-timers shanyuan-backup.timer
 - .env.tencent、SSH 私钥、发布压缩包只能留在服务器或本机临时目录，不能提交 Git。
 - 上线后移除临时部署 SSH 公钥，改用受控运维账号或受限部署密钥。
 - 仅在确认不影响其他项目构建后，执行 docker builder prune -af 清理构建缓存；不要使用会删除卷的 Docker 清理命令。
+
+## GitHub 自动部署
+
+仓库中的 `.github/workflows/tencent-deploy.yml` 会在 `main` 分支收到推送后执行：先运行类型检查与生产构建，再同步源码、重建 Web/API 容器，并检查内网和公网健康接口。
+
+在 GitHub 仓库的 **Settings -> Secrets and variables -> Actions** 中创建一个仓库 Secret：
+
+- `TENCENT_DEPLOY_KEY`：部署私钥完整内容，不是 `.pub` 公钥。
+
+当前工作流已固定腾讯云服务器地址、端口、`root` 部署用户及 SSH 主机公钥；若未来更换服务器，应同时更新工作流中的这四项值，并改用受限的专用部署用户。
+
+工作流只同步版本库中的应用源码；会保留服务器的 `.env.tencent`、MySQL 数据卷、上传文件卷、`backups/` 目录及已启用的备份定时器配置。不要在 GitHub Secrets 或仓库中保存模型密钥、数据库密码或 `.env.tencent`。
