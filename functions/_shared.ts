@@ -233,7 +233,7 @@ export function maskName(name: string): string {
 
 interface MockUser { id: string; created_at: string; }
 interface MockRecord { id: string; user_id: string; type: string; status: string; paid: number; preview_data: string; full_data: string | null; request_data: string; created_at: string; }
-interface MockLamp { id: string; record_id: string; user_id: string; name_raw: string; name_masked: string; donor_name_raw: string | null; donor_name_masked: string | null; relation: string; lamp_type: string; duration: string; wish: string | null; amount: number; paid: number; created_at: string; }
+interface MockLamp { id: string; record_id: string; user_id: string; name_raw: string; name_masked: string; donor_name_raw: string | null; donor_name_masked: string | null; relation: string; lamp_type: string; duration: string; wish: string | null; amount: number; paid: number; created_at: string; expires_at: string; }
 interface MockIncense { id: string; record_id: string; user_id: string; dedication: string | null; wish: string | null; amount: number; is_free: number; status: string; started_at: string | null; ends_at: string | null; created_at: string; updated_at: string; }
 interface MockOrder { id: string; user_id: string; record_id: string; type: string; amount: number; status: string; created_at: string; paid_at: string | null; }
 interface MockUsage { id: string; user_id: string; type: string; usage_date: string; record_id: string; free: number; created_at: string; }
@@ -269,7 +269,7 @@ class MockDB {
         id: genId("lamp"), record_id: genId("rec"), user_id: "seed",
         name_raw: nm, name_masked: nm, donor_name_raw: dn, donor_name_masked: "善**",
         relation: "家人", lamp_type: "平安灯", duration: "month",
-        wish: null, amount: 3.9, paid: 1, created_at: new Date(Date.now() - i * 3600000).toISOString(),
+        wish: null, amount: 3.9, paid: 1, created_at: new Date(Date.now() - i * 3600000).toISOString(), expires_at: new Date(Date.now() + (30 - i) * 86400000).toISOString(),
       });
     });
   }

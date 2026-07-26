@@ -7,7 +7,7 @@ import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
 import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 type LampType = "清心灯" | "智慧灯" | "长寿灯" | "平安灯" | "姻缘灯" | "财福灯";
-type Duration = "month" | "100days" | "year" | "forever";
+type Duration = "7days" | "month" | "100days" | "year";
 type Relation = "父亲" | "母亲" | "爱人" | "孩子" | "孙辈" | "朋友" | "自己";
 
 const LAMPS: { id: LampType; name: string; desc: string; emoji: string }[] = [
@@ -20,16 +20,16 @@ const LAMPS: { id: LampType; name: string; desc: string; emoji: string }[] = [
 ];
 
 const DURATIONS: { id: Duration; label: string; price: number }[] = [
+  { id: "7days", label: "七日供灯", price: 0 },
   { id: "month", label: "一月供奉", price: 3.9 },
   { id: "100days", label: "百日供奉", price: 5.9 },
   { id: "year", label: "一年供奉", price: 9.9 },
-  { id: "forever", label: "永久长明", price: 19.9 },
 ];
 const DURATION_LABELS: Record<string, string> = {
+  "7days": "七日供灯",
   month: "一月供奉",
   "100days": "百日供奉",
   year: "一年供奉",
-  forever: "永久长明",
 };
 
 const RELATIONS: Relation[] = ["父亲", "母亲", "爱人", "孩子", "孙辈", "朋友", "自己"];
@@ -51,6 +51,7 @@ type WallItem = {
   wish?: string | null;
   amount?: number | null;
   createdAt?: string;
+  expiresAt?: string;
   isMine?: boolean;
   nameRaw?: string | null;
   donorNameRaw?: string | null;
@@ -164,6 +165,7 @@ function formatShortDate(value: Date) {
 
 function getDurationEndDate(start: Date, duration: Duration) {
   const end = new Date(start);
+  if (duration === "7days") end.setDate(end.getDate() + 7);
   if (duration === "month") end.setMonth(end.getMonth() + 1);
   if (duration === "100days") end.setDate(end.getDate() + 100);
   if (duration === "year") end.setFullYear(end.getFullYear() + 1);
@@ -173,7 +175,6 @@ function getDurationEndDate(start: Date, duration: Duration) {
 function getDurationPeriodText(duration: Duration, startDate: Date | null) {
   if (!startDate) return "从今日起";
   const start = formatShortDate(startDate);
-  if (duration === "forever") return `自 ${start} 起长期`;
   return `${start} 至 ${formatShortDate(getDurationEndDate(startDate, duration))}`;
 }
 
@@ -244,7 +245,7 @@ export default function QifuPage() {
   const [name, setName] = useState("");
   const [relation, setRelation] = useState<Relation>("父亲");
   const [lampType, setLampType] = useState<LampType>("平安灯");
-  const [duration, setDuration] = useState<Duration>("month");
+  const [duration, setDuration] = useState<Duration>("7days");
   const [wish, setWish] = useState("");
   const [donorName, setDonorName] = useState("");
 
@@ -258,8 +259,9 @@ export default function QifuPage() {
   const [selectedLamp, setSelectedLamp] = useState<WallItem | null>(null);
   const [durationStartDate, setDurationStartDate] = useState<Date | null>(null);
   const [trialActive, setTrialActive] = useState(true);
+  const [sevenDayFreeNextAt, setSevenDayFreeNextAt] = useState<string | null>(null);
 
-  const price = DURATIONS.find((d) => d.id === duration)?.price ?? 3.9;
+  const price = DURATIONS.find((d) => d.id === duration)?.price ?? 0;
 
   const loadWall = async () => {
     try {
@@ -276,6 +278,7 @@ export default function QifuPage() {
           wish: item.wish,
           amount: typeof item.amount === "number" ? item.amount : Number(item.amount || 0),
           createdAt: item.createdAt,
+          expiresAt: item.expiresAt,
           isMine: Boolean(item.isMine),
           nameRaw: item.nameRaw,
           donorNameRaw: item.donorNameRaw,
@@ -283,6 +286,7 @@ export default function QifuPage() {
         setWallItems(items);
         setWallTotal(Number(res.data.total || items.length));
         setTodayNew(Number(res.data.todayNew || 0));
+        setSevenDayFreeNextAt(res.data.sevenDayFreeNextAt || null);
       }
     } catch {
       setResultMsg("灯墙数据加载失败，请稍后刷新");
@@ -296,6 +300,9 @@ export default function QifuPage() {
     void getUserMe().then((res) => setTrialActive(res.data?.trial?.active ?? false));
     loadWall();
   }, []);
+  useEffect(() => {
+    if (sevenDayFreeNextAt && duration === "7days") setDuration("month");
+  }, [duration, sevenDayFreeNextAt]);
 
   const handleSubmit = async () => {
     const trimmedName = name.trim();
@@ -337,6 +344,7 @@ export default function QifuPage() {
           wish: trimmedWish || null,
           amount: res.data?.amount ?? price,
           createdAt: new Date().toISOString(),
+          expiresAt: res.data?.expiresAt,
           isMine: true,
           nameRaw: trimmedName,
           donorNameRaw: trimmedDonor || null,
@@ -553,22 +561,32 @@ export default function QifuPage() {
           <section className="space-y-4">
             <p className="text-sm text-paper-dark/70">供奉时长</p>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {DURATIONS.map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => setDuration(d.id)}
-                  className={`rounded-xl border p-4 text-center transition-all ${
-                    duration === d.id
-                      ? "border-gold/60 bg-gold/10 shadow-gold"
-                      : "border-gold/10 bg-xuan-surface/40 hover:border-gold/30 hover:bg-gold/5"
-                  }`}
-                >
-                  <p className="font-display text-base text-gold/90 mb-0.5">{d.label}</p>
-                  <p className="mb-1 text-xs leading-relaxed text-paper-dark/45">{getDurationPeriodText(d.id, durationStartDate)}</p>
-                  <p className="text-sm font-semibold text-emerald-300">{trialActive ? "15 天免费试运营" : `¥${d.price}`}</p>
-                </button>
-              ))}
+              {DURATIONS.map((d) => {
+  const isSevenDayFree = d.id === "7days";
+  const isFreeUnavailable = isSevenDayFree && Boolean(sevenDayFreeNextAt);
+  const periodText = isFreeUnavailable && sevenDayFreeNextAt
+    ? `下次可用 ${formatShortDate(new Date(sevenDayFreeNextAt))}`
+    : getDurationPeriodText(d.id, durationStartDate);
+  return (
+    <button
+      key={d.id}
+      type="button"
+      onClick={() => setDuration(d.id)}
+      disabled={isFreeUnavailable}
+      className={`rounded-xl border p-4 text-center transition-all ${
+        duration === d.id
+          ? "border-gold/60 bg-gold/10 shadow-gold"
+          : "border-gold/10 bg-xuan-surface/40 hover:border-gold/30 hover:bg-gold/5"
+      } disabled:cursor-not-allowed disabled:opacity-45`}
+    >
+      <p className="mb-0.5 font-display text-base text-gold/90">{d.label}</p>
+      <p className="mb-1 text-xs leading-relaxed text-paper-dark/45">{periodText}</p>
+      <p className="text-sm font-semibold text-emerald-300">
+        {isSevenDayFree ? "免费 · 每人 7 天一次" : trialActive ? "15 天免费试运营" : `¥${d.price}`}
+      </p>
+    </button>
+  );
+})}
             </div>
           </section>
 
@@ -600,7 +618,7 @@ export default function QifuPage() {
           {/* Submit area */}
           <div className="flex flex-col items-center gap-3 pt-2">
             <p className="text-sm text-paper-dark/60">
-              {trialActive ? "15 天免费试运营中，本次无需支付" : <>需供奉 <span className="text-vermillion font-semibold text-lg">&yen;{price}</span></>}
+              {duration === "7days" ? "七日供灯免费 · 每人 7 天限一次" : trialActive ? "15 天免费试运营中，本次无需支付" : <>需供奉 <span className="text-vermillion font-semibold text-lg">&yen;{price}</span></>}
             </p>
             <button
               type="button"
@@ -693,6 +711,7 @@ export default function QifuPage() {
           ["关系", selectedLamp.relation || "未记录"],
           ["灯型", selectedLamp.lampType || "心愿灯"],
           ["供奉时长", getDurationLabel(selectedLamp.duration)],
+          ["供奉截止", formatLampTime(selectedLamp.expiresAt)],
           ["点灯时间", formatLampTime(selectedLamp.createdAt)],
         ];
 

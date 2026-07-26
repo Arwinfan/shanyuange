@@ -271,7 +271,7 @@ export interface CreateBlessingInput {
 export async function createBlessing(input: CreateBlessingInput) {
   const userId = await ensureUser();
   return post<{
-    recordId: string; orderId: string | null; needsPayment: boolean; amount: number;
+    recordId: string; orderId: string | null; needsPayment: boolean; amount: number; expiresAt?: string;
     preview: { lampType: string; duration: string; maskedName: string; maskedDonor: string };
     trial?: TrialInfo;
   }>("/blessing/create", { userId, ...input });
@@ -279,7 +279,7 @@ export async function createBlessing(input: CreateBlessingInput) {
 
 export async function getBlessingWall(page = 1, pageSize = 40) {
   const userId = await ensureUser();
-  const res = await get<{ items: any[]; total: number; todayNew: number }>(
+  const res = await get<{ items: any[]; total: number; todayNew: number; myTotal: number; sevenDayFreeNextAt: string | null }>(
     `/blessing/wall?page=${page}&pageSize=${pageSize}&userId=${encodeURIComponent(userId)}`
   );
   return res;

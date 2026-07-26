@@ -41,10 +41,12 @@ CREATE TABLE IF NOT EXISTS blessing_lamps (
   wish TEXT,
   amount REAL NOT NULL DEFAULT 0,
   paid INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_lamps_paid ON blessing_lamps(paid, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lamps_active ON blessing_lamps(paid, expires_at, created_at DESC);
 
 -- Incense offerings. One offering burns for thirty minutes after it is lit.
 CREATE TABLE IF NOT EXISTS incense_offerings (

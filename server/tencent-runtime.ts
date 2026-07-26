@@ -298,6 +298,37 @@ export async function closeTencentRuntime() {
 }
 // 轻量迁移：生产库已初始化时，Docker 的初始化脚本不会再次执行；在 API 启动时
 // 补齐隐私凭证表，避免将恢复凭证落到客户端或明文数据库字段中。
+
+async function ensureBlessingLampExpirySchema(mysqlPool: Pool) {
+  const [columns] = await mysqlPool.query<RowDataPacket[]>(
+    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'blessing_lamps' AND COLUMN_NAME = 'expires_at'",
+  );
+  if (!columns.length) {
+    await mysqlPool.execute("ALTER TABLE blessing_lamps ADD COLUMN expires_at DATETIME(3) NULL AFTER created_at");
+  }
+
+  // Historical durations receive a concrete end time. Legacy permanent lamps are retained in history,
+  // but are no longer active on the public wall after the permanent option has been removed.
+  await mysqlPool.execute(`
+    UPDATE blessing_lamps
+    SET expires_at = CASE duration
+      WHEN '7days' THEN DATE_ADD(created_at, INTERVAL 7 DAY)
+      WHEN 'month' THEN DATE_ADD(created_at, INTERVAL 1 MONTH)
+      WHEN '100days' THEN DATE_ADD(created_at, INTERVAL 100 DAY)
+      WHEN 'year' THEN DATE_ADD(created_at, INTERVAL 1 YEAR)
+      WHEN 'forever' THEN created_at
+      ELSE created_at
+    END
+    WHERE expires_at IS NULL
+  `);
+
+  const [indexes] = await mysqlPool.query<RowDataPacket[]>(
+    "SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'blessing_lamps' AND INDEX_NAME = 'idx_lamps_active'",
+  );
+  if (!indexes.length) {
+    await mysqlPool.execute("CREATE INDEX idx_lamps_active ON blessing_lamps (paid, expires_at, created_at DESC)");
+  }
+}
 export async function ensureTencentPrivacySchema() {
   const mysqlPool = getPool(process.env as RuntimeEnv);
   if (!mysqlPool) return;
@@ -316,4 +347,5 @@ export async function ensureTencentPrivacySchema() {
       CONSTRAINT fk_recovery_user FOREIGN KEY (user_id) REFERENCES users(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await ensureBlessingLampExpirySchema(mysqlPool);
 }

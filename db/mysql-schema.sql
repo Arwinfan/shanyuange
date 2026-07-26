@@ -40,8 +40,10 @@ CREATE TABLE IF NOT EXISTS blessing_lamps (
   amount DECIMAL(10,2) NOT NULL DEFAULT 0,
   paid TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME(3) NOT NULL,
+  expires_at DATETIME(3) NOT NULL,
   PRIMARY KEY (id),
   KEY idx_lamps_paid (paid, created_at DESC),
+  KEY idx_lamps_active (paid, expires_at, created_at DESC),
   KEY idx_lamps_user (user_id, created_at DESC),
   CONSTRAINT fk_lamps_record FOREIGN KEY (record_id) REFERENCES service_records(id),
   CONSTRAINT fk_lamps_user FOREIGN KEY (user_id) REFERENCES users(id)
