@@ -390,7 +390,7 @@ function SiteHeader({ current, menuOpen, setMenuOpen }: { current: string; menuO
     <header className="fixed top-0 inset-x-0 z-50 pt-[9px]">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 h-[54px]">
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <img src="/favicon.svg" alt="善缘阁" className="size-8" />
+          <img src="/images/shanyuange-logo-v3.png" alt="善缘阁" className="size-8" />
           <span className="font-display text-lg tracking-[0.15em] text-gold hidden sm:inline">善缘阁</span>
         </Link>
         <nav className="hidden md:flex items-center gap-5 text-sm text-paper-dark/75">

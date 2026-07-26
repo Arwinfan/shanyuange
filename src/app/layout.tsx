@@ -55,9 +55,8 @@ export default function RootLayout({
     <html lang="zh-CN" className="h-full antialiased">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/favicon.svg" />
+        <link rel="icon" href="/images/shanyuange-logo-v3.png" type="image/png" sizes="1254x1254" />
+        <link rel="apple-touch-icon" href="/images/shanyuange-logo-v3.png" />
       </head>
       <body className="min-h-full flex flex-col">
         <PwaBootstrap />

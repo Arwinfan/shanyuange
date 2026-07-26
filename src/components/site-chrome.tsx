@@ -42,7 +42,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
       <aside className="site-sidebar hidden lg:flex" aria-label="主导航">
         <Link href="/" className="site-brand">
           <span className="site-brand-mark" aria-hidden="true">
-            <img src="/favicon.svg" alt="" className="size-7" />
+            <img src="/images/shanyuange-logo-v3.png" alt="" className="size-7" />
           </span>
           <span>
             <strong>善缘阁</strong>

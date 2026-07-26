@@ -249,7 +249,7 @@ function MobileHeader({ menuOpen, onToggle }: { menuOpen: boolean; onToggle: () 
   return (
     <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-gold/15 bg-xuan/95 px-4 backdrop-blur-md lg:hidden">
       <Link href="/" className="flex items-center gap-2">
-        <img src="/favicon.svg" alt="善缘阁" className="size-8" />
+        <img src="/images/shanyuange-logo-v3.png" alt="善缘阁" className="size-8" />
         <span className="font-display text-lg tracking-[0.15em] text-gold">善缘阁</span>
       </Link>
       <div className="flex items-center gap-1.5">

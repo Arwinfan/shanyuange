@@ -243,7 +243,7 @@ export const legalDocuments = {
 function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="返回首页">
-      <img src="/favicon.svg" alt="善缘阁" className="size-8" />
+      <img src="/images/shanyuange-logo-v3.png" alt="善缘阁" className="size-8" />
       <span className="font-display text-lg tracking-[0.15em] text-gold">善缘阁</span>
     </Link>
   );

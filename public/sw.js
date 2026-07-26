@@ -1,5 +1,5 @@
-const CACHE_NAME = "putiyuan-shell-v2";
-const APP_SHELL = ["/", "/manifest.json", "/favicon.svg"];
+const CACHE_NAME = "shanyuange-shell-v3";
+const APP_SHELL = ["/", "/manifest.json", "/images/shanyuange-logo-v3.png"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

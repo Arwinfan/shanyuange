@@ -266,7 +266,7 @@ function ResultCard({ result, pendingOrder, unlocking, onUnlock }: { result: any
 
 function BodhiIcon() {
   return (
-    <img src="/favicon.svg" alt="善缘阁" className="size-8" />
+    <img src="/images/shanyuange-logo-v3.png" alt="善缘阁" className="size-8" />
   );
 }
 
