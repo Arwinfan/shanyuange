@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { fortuneDivination, getQuotaToday, payOrderAndGetRecord } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
+import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 type Master = "huiming" | "mingxin" | "xuanzhen";
 
@@ -18,6 +19,7 @@ export default function DivinationPage() {
   const [master, setMaster] = useState<Master>("huiming");
   const [question, setQuestion] = useState("");
   const [shaking, setShaking] = useState(false);
+  const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
   const [quotaText, setQuotaText] = useState("1/1");
   const [trialActive, setTrialActive] = useState(true);
   const [result, setResult] = useState<any>(null);
@@ -168,7 +170,7 @@ export default function DivinationPage() {
 
             {/* Shake Button */}
             <div className="text-center">
-              <button onClick={handleShake} disabled={shaking}
+              <button onClick={() => setContentNoticeOpen(true)} disabled={shaking}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-vermillion px-12 py-4 text-xl text-white font-medium tracking-wider shadow-lg shadow-vermillion/20 hover:bg-vermillion-light active:bg-vermillion-dark transition-all disabled:opacity-60 disabled:cursor-not-allowed">
               {shaking ? (
                   <>
@@ -185,6 +187,8 @@ export default function DivinationPage() {
           )}
         </div>
       </main>
+
+      <ContentNoticeModal open={contentNoticeOpen} feature="问题梳理解读" onClose={() => setContentNoticeOpen(false)} onConfirm={() => { setContentNoticeOpen(false); void handleShake(); }} />
 
       <SiteFooter />
     </div>

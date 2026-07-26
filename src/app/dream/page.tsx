@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { fortuneDream } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
+import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 const CATEGORIES = [
   { emoji: "👥", label: "人物" }, { emoji: "🫀", label: "身体" }, { emoji: "🐎", label: "动物" },
@@ -47,6 +48,7 @@ export default function DreamPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
   const [result, setResult] = useState<DreamResult | null>(null);
 
   const handleDream = async () => {
@@ -88,7 +90,7 @@ export default function DreamPage() {
               <input type="text" value={query} onChange={e => setQuery(e.target.value)}
                 placeholder="如：梦见龙、梦见牙齿掉了"
                 className="flex-1 h-12 rounded-md border border-gold/20 bg-xuan-surface px-4 text-base text-paper-dark placeholder:text-paper-dark/30 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/30 transition-colors" />
-              <button onClick={handleDream} disabled={loading}
+              <button onClick={() => setContentNoticeOpen(true)} disabled={loading}
                 className="rounded-lg bg-vermillion px-6 py-3 text-white font-medium hover:bg-vermillion-light transition-colors shrink-0 disabled:opacity-60">
                 {loading ? "参详中..." : "解梦"}
               </button>
@@ -174,6 +176,8 @@ export default function DreamPage() {
           </section>
         </div>
       </main>
+
+      <ContentNoticeModal open={contentNoticeOpen} feature="梦境解析" onClose={() => setContentNoticeOpen(false)} onConfirm={() => { setContentNoticeOpen(false); void handleDream(); }} />
 
       <SiteFooter />
     </div>

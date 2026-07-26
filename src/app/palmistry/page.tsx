@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { fortunePalmistry, payOrderAndGetRecord } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
+import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 type Master = "huiming" | "mingxin" | "xuanzhen";
 type Mode = "hand" | "face";
@@ -23,6 +24,7 @@ export default function PalmistryPage() {
   const [imageBase64, setImageBase64] = useState("");
   const [imageName, setImageName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [pendingOrder, setPendingOrder] = useState<{ orderId: string; amount: number } | null>(null);
   const [unlocking, setUnlocking] = useState(false);
@@ -230,7 +232,7 @@ export default function PalmistryPage() {
 
           {/* Submit */}
           <div className="text-center">
-            <button disabled={loading || !imageBase64 || !photoConsent} onClick={handleSubmit}
+            <button disabled={loading || !imageBase64 || !photoConsent} onClick={() => setContentNoticeOpen(true)}
               className="inline-flex items-center justify-center rounded-lg bg-vermillion px-12 py-4 text-xl text-white font-medium tracking-wider shadow-lg shadow-vermillion/20 hover:bg-vermillion-light active:bg-vermillion-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               {loading ? "正在参详特征..." : "开始专业解读"}
             </button>
@@ -257,6 +259,8 @@ export default function PalmistryPage() {
           </div>
         </div>
       </main>
+
+      <ContentNoticeModal open={contentNoticeOpen} feature="手相或面相解读" onClose={() => setContentNoticeOpen(false)} onConfirm={() => { setContentNoticeOpen(false); void handleSubmit(); }} />
 
       <SiteFooter />
     </div>

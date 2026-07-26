@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { fortuneBazi, payOrderAndGetRecord } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
+import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 type Master = "huiming" | "mingxin" | "xuanzhen";
 type Gender = "男" | "女";
@@ -52,6 +53,7 @@ export default function BaziPage() {
   const [hour, setHour] = useState("未时 (13:00-15:00)");
   const [gender, setGender] = useState<Gender>("男");
   const [loading, setLoading] = useState(false);
+  const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
   const [result, setResult] = useState("");
   const [pendingOrder, setPendingOrder] = useState<{ orderId: string; amount: number } | null>(null);
   const [unlocking, setUnlocking] = useState(false);
@@ -183,7 +185,7 @@ export default function BaziPage() {
 
           {/* Submit */}
           <div className="text-center">
-            <button onClick={handleBazi} disabled={loading}
+            <button onClick={() => setContentNoticeOpen(true)} disabled={loading}
               className="inline-flex items-center justify-center rounded-lg bg-vermillion px-12 py-4 text-xl text-white font-medium tracking-wider shadow-lg shadow-vermillion/20 hover:bg-vermillion-light active:bg-vermillion-dark transition-all disabled:opacity-60 disabled:cursor-not-allowed">
               {loading ? "正在排演命盘..." : "开始真排盘"}
             </button>
@@ -211,6 +213,8 @@ export default function BaziPage() {
         onClose={() => setPicker(null)}
         onSelect={selectDatePart}
       />
+
+      <ContentNoticeModal open={contentNoticeOpen} feature="八字排盘与解读" onClose={() => setContentNoticeOpen(false)} onConfirm={() => { setContentNoticeOpen(false); void handleBazi(); }} />
 
       <SiteFooter />
     </div>

@@ -8,6 +8,7 @@ import {
   type IncenseOffering,
   type TrialInfo,
 } from "@/lib/api";
+import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 type IncenseStatus = {
   burningMinutes: number;
@@ -76,6 +77,7 @@ export default function TempleClient() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -216,7 +218,7 @@ export default function TempleClient() {
               <span>写下一句心愿 <em>可选，最多 80 字</em></span>
               <textarea value={wish} onChange={(event) => setWish(event.target.value)} maxLength={80} placeholder="愿所念之人平安顺遂，愿此心安定明朗。" rows={4} />
             </label>
-            <button type="button" onClick={() => void createOffering()} disabled={loading || submitting || incenseFull} className="temple-offer-button">
+            <button type="button" onClick={() => setContentNoticeOpen(true)} disabled={loading || submitting || incenseFull} className="temple-offer-button">
               <span>{submitting ? "正在整理香火…" : primaryLabel}</span>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M14 7l5 5-5 5" /></svg>
             </button>
@@ -276,6 +278,8 @@ export default function TempleClient() {
           <div className="temple-empty-ledger">第一炷香尚未点燃，愿此刻的心意有一处安放。</div>
         )}
       </section>
+
+      <ContentNoticeModal open={contentNoticeOpen} feature="静心敬香" kind="ritual" onClose={() => setContentNoticeOpen(false)} onConfirm={() => { setContentNoticeOpen(false); void createOffering(); }} />
 
       {confirmOpen && (
         <div className="temple-dialog-backdrop" role="presentation" onMouseDown={() => !submitting && setConfirmOpen(false)}>

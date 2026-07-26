@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { fortuneDraw, getQuotaToday, payOrderAndGetRecord } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
+import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 type Master = "huiming" | "mingxin" | "xuanzhen";
 
@@ -39,6 +40,7 @@ export default function LotteryPage() {
   const [master, setMaster] = useState<Master>("huiming");
   const [question, setQuestion] = useState("");
   const [drawing, setDrawing] = useState(false);
+  const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
   const [quotaText, setQuotaText] = useState("1/1");
   const [trialActive, setTrialActive] = useState(true);
   const [result, setResult] = useState<any>(null);
@@ -202,7 +204,7 @@ export default function LotteryPage() {
           {/* ===== Draw Button ===== */}
           <div className="flex justify-center">
             <button
-              onClick={handleDraw}
+              onClick={() => setContentNoticeOpen(true)}
               disabled={drawing}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-vermillion px-9 py-3 text-xl text-white font-medium tracking-wider shadow-lg shadow-vermillion/20 hover:bg-vermillion-light active:bg-vermillion-dark transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
@@ -227,6 +229,8 @@ export default function LotteryPage() {
       </main>
 
       {/* ===== Footer ===== */}
+      <ContentNoticeModal open={contentNoticeOpen} feature="灵签解读" onClose={() => setContentNoticeOpen(false)} onConfirm={() => { setContentNoticeOpen(false); void handleDraw(); }} />
+
       <Footer />
     </div>
   );

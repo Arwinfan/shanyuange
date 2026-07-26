@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { fortuneNaming, payOrderAndGetRecord } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
+import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 type Gender = "男" | "女";
 type Mode = "professional" | "evaluate";
@@ -73,6 +74,7 @@ export default function NamingPage() {
   };
 
   const [loading, setLoading] = useState(false);
+  const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
   const [result, setResult] = useState("");
   const [pendingOrder, setPendingOrder] = useState<{ orderId: string; amount: number } | null>(null);
   const [unlocking, setUnlocking] = useState(false);
@@ -294,7 +296,7 @@ export default function NamingPage() {
 
           {/* Submit */}
           <div className="text-center">
-            <button onClick={handleNaming} disabled={loading}
+            <button onClick={() => setContentNoticeOpen(true)} disabled={loading}
               className="inline-flex items-center justify-center rounded-lg bg-vermillion px-12 py-4 text-xl text-white font-medium tracking-wider shadow-lg shadow-vermillion/20 hover:bg-vermillion-light active:bg-vermillion-dark transition-all disabled:opacity-60 disabled:cursor-not-allowed">
               {loading ? (mode === "evaluate" ? "正在参详姓名..." : "正在推敲名字...") : (mode === "evaluate" ? "开始姓名测评" : "开始专业起名")}
             </button>
@@ -322,6 +324,8 @@ export default function NamingPage() {
         onClose={() => setPicker(null)}
         onSelect={selectDatePart}
       />
+
+      <ContentNoticeModal open={contentNoticeOpen} feature={mode === "evaluate" ? "姓名测评" : "专业起名"} onClose={() => setContentNoticeOpen(false)} onConfirm={() => { setContentNoticeOpen(false); void handleNaming(); }} />
 
       <SiteFooter />
     </div>

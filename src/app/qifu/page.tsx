@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createBlessing, getBlessingWall, getUserMe, payOrder } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
+import { ContentNoticeModal } from "@/components/content-notice-modal";
 
 type LampType = "清心灯" | "智慧灯" | "长寿灯" | "平安灯" | "姻缘灯" | "财福灯";
 type Duration = "month" | "100days" | "year" | "forever";
@@ -248,6 +249,7 @@ export default function QifuPage() {
   const [donorName, setDonorName] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
+  const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
   const [resultMsg, setResultMsg] = useState("");
   const [wallItems, setWallItems] = useState<WallItem[]>([]);
   const [wallTotal, setWallTotal] = useState(0);
@@ -602,7 +604,7 @@ export default function QifuPage() {
             </p>
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={() => setContentNoticeOpen(true)}
               disabled={submitting}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-vermillion px-10 py-3 text-white text-lg font-medium tracking-wider shadow-lg shadow-vermillion/20 hover:bg-vermillion-light active:bg-vermillion-dark transition-all hover:shadow-vermillion/30 disabled:opacity-60 disabled:cursor-not-allowed"
             >
@@ -680,6 +682,8 @@ export default function QifuPage() {
           )}
         </section>
       </main>
+
+      <ContentNoticeModal open={contentNoticeOpen} feature="心愿供灯" kind="ritual" onClose={() => setContentNoticeOpen(false)} onConfirm={() => { setContentNoticeOpen(false); void handleSubmit(); }} />
 
       {selectedLamp && (() => {
         const visual = getLampVisual(selectedLamp.lampType);
