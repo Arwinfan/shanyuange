@@ -582,7 +582,7 @@ export default function QifuPage() {
       <p className="mb-0.5 font-display text-base text-gold/90">{d.label}</p>
       <p className="mb-1 text-xs leading-relaxed text-paper-dark/45">{periodText}</p>
       <p className="text-sm font-semibold text-emerald-300">
-        {isSevenDayFree ? "免费 · 每人 7 天一次" : trialActive ? "15 天免费试运营" : `¥${d.price}`}
+        {isSevenDayFree ? "免费 · 7 天一次" : trialActive ? "15 天免费试运营" : `¥${d.price}`}
       </p>
     </button>
   );
@@ -618,7 +618,7 @@ export default function QifuPage() {
           {/* Submit area */}
           <div className="flex flex-col items-center gap-3 pt-2">
             <p className="text-sm text-paper-dark/60">
-              {duration === "7days" ? "七日供灯免费 · 每人 7 天限一次" : trialActive ? "15 天免费试运营中，本次无需支付" : <>需供奉 <span className="text-vermillion font-semibold text-lg">&yen;{price}</span></>}
+              {duration === "7days" ? "七日供灯免费 · 7 天限一次" : trialActive ? "15 天免费试运营中，本次无需支付" : <>需供奉 <span className="text-vermillion font-semibold text-lg">&yen;{price}</span></>}
             </p>
             <button
               type="button"
