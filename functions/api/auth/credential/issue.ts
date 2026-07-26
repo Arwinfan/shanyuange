@@ -1,7 +1,8 @@
 import { createOpaqueToken, fail, genId, handleOptions, hashSecret, mockDb, ok, readBody, requireDatabaseOrMock } from "../../../_shared";
 
 const CREDENTIAL_PREFIX = "sycred_v2_";
-const CREDENTIAL_TTL_MS = 15 * 60 * 1000;
+// 恢复凭证直至用户重新生成或注销账号才失效。
+const RECOVERY_CREDENTIAL_EXPIRES_AT = "2099-12-31T23:59:59.999Z";
 
 export async function onRequestPost(context: any) {
   const body = await readBody(context.request);
@@ -13,7 +14,7 @@ export async function onRequestPost(context: any) {
 
   const now = new Date();
   const nowIso = now.toISOString();
-  const expiresAt = new Date(now.getTime() + CREDENTIAL_TTL_MS).toISOString();
+  const expiresAt = RECOVERY_CREDENTIAL_EXPIRES_AT;
   const token = createOpaqueToken();
   const tokenHash = await hashSecret(token);
   const db = context.env?.DB;

@@ -65,7 +65,7 @@ export default function MyPage() {
       });
       setCredentialUrl(url);
       setQrDataUrl(dataUrl);
-      setAccountMessage("账号凭证已生成，有效期 15 分钟且仅可恢复一次，请下载后妥善保存。");
+      setAccountMessage("账号凭证已生成，请下载后妥善保存。重新生成会使旧凭证立即失效。");
     } catch {
       setAccountMessage("账号凭证生成失败，请稍后重试");
     } finally {
@@ -241,7 +241,7 @@ export default function MyPage() {
     document.body.appendChild(link);
     link.click();
     link.remove();
-    setAccountMessage("账号凭证二维码已生成，请保存到安全位置。");
+    setAccountMessage("账号凭证二维码已下载，请保存到安全位置，切勿转发给他人。");
   };
 
 
@@ -357,7 +357,7 @@ const handleExportData = async () => {
 
             <div className="rounded-lg border border-gold/15 bg-xuan-surface/45 p-4 text-center">
               <p className="text-sm text-paper-dark/70">账号凭证二维码</p>
-              <p className="mt-1 text-xs text-paper-dark/45">点击后生成，有效期 15 分钟，仅可恢复一次。</p>
+              <p className="mt-1 text-xs text-paper-dark/45">点击后生成，长期有效；重新生成会使旧凭证失效。</p>
               <div className="mx-auto mt-3 flex size-44 items-center justify-center rounded-lg border border-gold/15 bg-[#f1ead9] p-2">
                 {qrDataUrl ? (
                   <img src={qrDataUrl} alt="账号凭证二维码" className="size-full rounded-md" />
@@ -393,7 +393,7 @@ const handleExportData = async () => {
 
           {accountMessage && <p className="rounded-md border border-gold/15 bg-gold/5 px-3 py-2 text-xs text-paper-dark/65">{accountMessage}</p>}
           <p className="text-xs leading-relaxed text-paper-dark/45">
-            账号凭证属于敏感恢复凭据：有效期 15 分钟、仅可使用一次，请勿转发给他人。
+            账号凭证属于敏感恢复凭据：长期有效，直到您重新生成或注销账号。请勿转发给他人。
           </p>
         </section>
 

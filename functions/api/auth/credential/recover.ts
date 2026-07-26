@@ -23,14 +23,14 @@ export async function onRequestPost(context: any) {
 
   if (db) {
     const row = await db.prepare(
-      "SELECT id, user_id FROM account_recovery_tokens WHERE token_hash = ? AND used_at IS NULL AND expires_at > ? LIMIT 1",
+      "SELECT id, user_id FROM account_recovery_tokens WHERE token_hash = ? AND expires_at > ? LIMIT 1",
     ).bind(tokenHash, nowIso).first();
     if (!row) return fail("账号凭证已失效或已使用，请在原设备重新生成", 404);
     await db.prepare("UPDATE account_recovery_tokens SET used_at = ? WHERE id = ? AND used_at IS NULL")
       .bind(nowIso, (row as any).id).run();
     userId = (row as any).user_id;
   } else {
-    const row = mockDb().recoveryCredentials.find((item) => item.token_hash === tokenHash && !item.used_at && Date.parse(item.expires_at) > now.getTime());
+    const row = mockDb().recoveryCredentials.find((item) => item.token_hash === tokenHash && Date.parse(item.expires_at) > now.getTime());
     if (!row) return fail("账号凭证已失效或已使用，请在原设备重新生成", 404);
     row.used_at = nowIso;
     userId = row.user_id;
