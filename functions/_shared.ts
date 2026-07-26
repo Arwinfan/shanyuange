@@ -269,7 +269,7 @@ class MockDB {
         id: genId("lamp"), record_id: genId("rec"), user_id: "seed",
         name_raw: nm, name_masked: nm, donor_name_raw: dn, donor_name_masked: "善**",
         relation: "家人", lamp_type: "平安灯", duration: "month",
-        wish: null, amount: 3.9, paid: 1, created_at: new Date(Date.now() - i * 3600000).toISOString(), expires_at: new Date(Date.now() + (30 - i) * 86400000).toISOString(),
+        wish: null, amount: 2.9, paid: 1, created_at: new Date(Date.now() - i * 3600000).toISOString(), expires_at: new Date(Date.now() + (30 - i) * 86400000).toISOString(),
       });
     });
   }
@@ -352,7 +352,7 @@ export function getSiteTrial(env: any, now = Date.now()) {
   return buildTrialStatus(envValue(env, "SITE_TRIAL_START_AT"), now, trialDays(env));
 }
 export const FREE_LIMITS: Record<string, { total: number; label: string; paidAmount: number }> = {
-  fortune_draw: { total: 1, label: "关帝灵签", paidAmount: 6.6 },
+  fortune_draw: { total: 1, label: "关帝灵签", paidAmount: 2.9 },
   fortune_divination: { total: 1, label: "六爻占卜", paidAmount: 2.9 },
 };
 

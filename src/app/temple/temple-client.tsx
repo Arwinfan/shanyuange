@@ -176,7 +176,7 @@ export default function TempleClient() {
   const hasUsedFree = Boolean(status?.hasFreeOffering);
   const trialActive = Boolean(status?.trial?.active);
   const incenseFull = active.length >= 3;
-  const primaryLabel = incenseFull ? "香炉已满，静候香尽" : trialActive ? "15 天免费试运营 · 敬上一炷清香" : hasUsedFree ? "供奉一炷清香 · ¥2.99" : "免费点燃第一炷";
+  const primaryLabel = incenseFull ? "香炉已满，静候香尽" : trialActive ? "15 天免费试运营 · 敬上一炷清香" : hasUsedFree ? "供奉一炷清香 · ¥2.9" : "免费点燃第一炷";
 
   return (
     <main className="temple-page">
@@ -188,7 +188,7 @@ export default function TempleClient() {
           <div className="temple-hero-notes" aria-label="供香说明">
             <span>{trialActive ? "15 天免费试运营" : "首炷免费"}</span>
             <i />
-            <span>{trialActive ? `剩余 ${status?.trial?.daysRemaining || 0} 天` : "后续每炷 ¥2.99"}</span>
+            <span>{trialActive ? `剩余 ${status?.trial?.daysRemaining || 0} 天` : "后续每炷 ¥2.9"}</span>
             <i />
             <span>每炷燃烧 30 分钟</span>
           </div>
@@ -268,7 +268,7 @@ export default function TempleClient() {
                   <p>{item.wish || "愿心中所念，安稳明朗。"}</p>
                 </div>
                 <div className="temple-history-meta">
-                  <span>{item.amount === 0 ? "试运营免费" : item.isFree ? "首炷免费" : "¥2.99"}</span>
+                  <span>{item.amount === 0 ? "试运营免费" : item.isFree ? "首炷免费" : "¥2.9"}</span>
                   <time>{formatDate(item.startedAt || item.createdAt)}</time>
                 </div>
               </article>
@@ -289,10 +289,10 @@ export default function TempleClient() {
             </button>
             <p className="temple-eyebrow"><span /> 继续供香</p>
             <h2 id="payment-title">确认敬上一炷清香</h2>
-            <p>每炷将从点燃时起燃烧 30 分钟。此炷供香金额为 <strong>¥2.99</strong>。</p>
+            <p>每炷将从点燃时起燃烧 30 分钟。此炷供香金额为 <strong>¥2.9</strong>。</p>
             <div className="temple-dialog-actions">
               <button type="button" onClick={() => setConfirmOpen(false)} disabled={submitting} className="temple-secondary-button">暂不供香</button>
-              <button type="button" onClick={() => void handlePaidConfirm()} disabled={submitting} className="temple-confirm-button">{submitting ? "正在点燃…" : "确认供香 ¥2.99"}</button>
+              <button type="button" onClick={() => void handlePaidConfirm()} disabled={submitting} className="temple-confirm-button">{submitting ? "正在点燃…" : "确认供香 ¥2.9"}</button>
             </div>
           </section>
         </div>

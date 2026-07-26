@@ -12,7 +12,7 @@ import {
 } from "../../_shared";
 
 const BURNING_MINUTES = 30;
-const INCENSE_PRICE = 2.99;
+const INCENSE_PRICE = 2.9;
 const MAX_ACTIVE_INCENSE = 3;
 
 function buildResult(input: { dedication: string; wish: string; startedAt: string | null; endsAt: string | null }) {

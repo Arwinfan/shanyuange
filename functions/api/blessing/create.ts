@@ -6,7 +6,7 @@ const VALID_DURATIONS = ["7days","month","100days","year"];
 const VALID_RELATIONS = ["父亲","母亲","爱人","孩子","孙辈","朋友","自己"];
 const FREE_SEVEN_DAY_DURATION = "7days";
 const FREE_SEVEN_DAY_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
-const PRICES: Record<string, number> = { "7days": 0, month: 3.9, "100days": 5.9, year: 9.9 };
+const PRICES: Record<string, number> = { "7days": 0, month: 2.9, "100days": 6.9, year: 9.9 };
 
 function getExpiresAt(now: Date, duration: string) {
   const expiresAt = new Date(now);
@@ -37,7 +37,7 @@ export async function onRequestPost(context: any) {
   if (wish && (err = requireLength(wish, 80, "心愿"))) return fail(err);
   if (donorName && (err = requireLength(donorName, 10, "称呼"))) return fail(err);
 
-  const amount = PRICES[duration] ?? 3.9;
+  const amount = PRICES[duration] ?? 2.9;
   const recordId = genId("rec");
   const orderId = genId("ord");
   const lampId = genId("lamp");

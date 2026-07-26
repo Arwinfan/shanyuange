@@ -21,8 +21,8 @@ const LAMPS: { id: LampType; name: string; desc: string; emoji: string }[] = [
 
 const DURATIONS: { id: Duration; label: string; price: number }[] = [
   { id: "7days", label: "七日供灯", price: 0 },
-  { id: "month", label: "一月供奉", price: 3.9 },
-  { id: "100days", label: "百日供奉", price: 5.9 },
+  { id: "month", label: "一月供奉", price: 2.9 },
+  { id: "100days", label: "百日供奉", price: 6.9 },
   { id: "year", label: "一年供奉", price: 9.9 },
 ];
 const DURATION_LABELS: Record<string, string> = {
