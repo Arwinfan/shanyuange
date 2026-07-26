@@ -12,7 +12,7 @@ const API_BASE = configuredApiBase || (
 const USER_ID_KEY = "putiyuan_userId";
 const AUTH_KEY = "putiyuan_auth";
 const ACCOUNT_NAME_KEY = "putiyuan_accountName";
-const ACCOUNT_CREDENTIAL_PREFIX = "sycred_";
+const ACCOUNT_CREDENTIAL_PREFIX = "sycred_v2_";
 const ACCOUNT_NAME_WORDS = [
   "善念", "善缘", "清愿", "静心", "福安", "明善", "莲心", "慈愿",
   "净缘", "慧安", "和善", "愿宁", "心灯", "善行", "福缘", "明愿",
@@ -26,9 +26,12 @@ async function request<T = any>(
 ): Promise<{ success: boolean; data?: T; message?: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 90000);
+  const auth = getAuthInfo();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (auth?.sessionToken) headers["X-User-Token"] = auth.sessionToken;
   const opts: RequestInit = {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers,
     signal: controller.signal,
   };
   if (body) opts.body = JSON.stringify(body);
@@ -128,25 +131,25 @@ export function getAuthInfo(): { phoneMasked?: string; sessionToken?: string; ex
   }
 }
 
-function setAuthInfo(input: { phoneMasked?: string; sessionToken?: string; expiresAt?: string }) {
-  if (typeof window !== "undefined") localStorage.setItem(AUTH_KEY, JSON.stringify(input));
+function setAuthInfo(input: { phoneMasked?: string; sessionToken?: string; expiresAt?: string }, replace = false) {
+  if (typeof window === "undefined") return;
+  const current = replace ? {} : (getAuthInfo() || {});
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ ...current, ...input }));
 }
 
-function encodeBase64Url(value: string) {
-  if (typeof window === "undefined") return "";
-  const bytes = new TextEncoder().encode(value);
-  let binary = "";
-  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
-  return window.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+function clearLocalIdentity() {
+  _cachedUserId = null;
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(ACCOUNT_NAME_KEY);
 }
 
-function decodeBase64Url(value: string) {
-  if (typeof window === "undefined") return "";
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  const binary = window.atob(padded);
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+function hasActiveDeviceSession() {
+  const auth = getAuthInfo();
+  if (!auth?.sessionToken || !auth.expiresAt) return false;
+  const expiresAt = Date.parse(auth.expiresAt);
+  return Number.isFinite(expiresAt) && expiresAt > Date.now();
 }
 
 function extractCredential(input: string) {
@@ -164,56 +167,47 @@ function extractCredential(input: string) {
 
 export async function getAccountCredentialUrl() {
   const userId = await ensureUser();
-  const accountName = getAccountName();
-  const credential = `${ACCOUNT_CREDENTIAL_PREFIX}${encodeBase64Url(JSON.stringify({
-    v: 1,
-    userId,
-    accountName,
-    issuedAt: new Date().toISOString(),
-  }))}`;
+  const result = await post<{ credential: string; expiresAt: string }>("/auth/credential/issue", { userId });
+  if (!result.success || !result.data?.credential) {
+    throw new Error(result.message || "账号凭证生成失败");
+  }
 
-  if (typeof window === "undefined") return credential;
+  if (typeof window === "undefined") return result.data.credential;
   const url = new URL("/my", window.location.origin);
-  url.searchParams.set("credential", credential);
+  url.searchParams.set("credential", result.data.credential);
   return url.toString();
 }
 
-export function importAccountCredential(input: string) {
-  try {
-    const credential = extractCredential(input);
-    if (!credential.startsWith(ACCOUNT_CREDENTIAL_PREFIX)) {
-      return { success: false, message: "账号凭证格式不正确" };
-    }
-
-    const decoded = decodeBase64Url(credential.slice(ACCOUNT_CREDENTIAL_PREFIX.length));
-    const payload = JSON.parse(decoded) as { v?: number; userId?: string; accountName?: string };
-    if (payload.v !== 1 || !payload.userId || typeof payload.userId !== "string") {
-      return { success: false, message: "账号凭证已损坏" };
-    }
-
-    setUserId(payload.userId);
-    if (payload.accountName && typeof payload.accountName === "string") {
-      setAccountName(payload.accountName);
-    } else {
-      setAccountName(buildRandomAccountName(payload.userId));
-    }
-
-    return { success: true, accountName: getAccountName() };
-  } catch {
-    return { success: false, message: "账号凭证无法识别" };
+export async function importAccountCredential(input: string) {
+  const credential = extractCredential(input);
+  if (!credential.startsWith(ACCOUNT_CREDENTIAL_PREFIX)) {
+    return { success: false, message: "账号凭证格式不正确" };
   }
+
+  const result = await post<{ userId: string; sessionToken: string; expiresAt: string }>("/auth/credential/recover", { credential });
+  if (!result.success || !result.data?.userId || !result.data.sessionToken) {
+    return { success: false, message: result.message || "账号凭证无法识别" };
+  }
+
+  setUserId(result.data.userId);
+  setAccountName(buildRandomAccountName(result.data.userId));
+  setAuthInfo({ sessionToken: result.data.sessionToken, expiresAt: result.data.expiresAt }, true);
+  return { success: true, accountName: getAccountName() };
 }
 
-/** 确保用户已注册（匿名），返回 userId */
+/** 确保当前设备持有服务端校验的匿名凭证。 */
 export async function ensureUser(): Promise<string> {
   const existing = getUserId();
-  if (existing) return existing;
+  if (existing && hasActiveDeviceSession()) return existing;
   if (_creatingUser) return _creatingUser;
 
-  _creatingUser = post<{ userId: string }>("/user/anonymous", {}).then((res) => {
-    if (res.success && res.data?.userId) {
+  // 旧版本只保存 userId，无法安全证明归属，升级后不再继续信任该标识。
+  if (existing) clearLocalIdentity();
+  _creatingUser = post<{ userId: string; sessionToken: string; expiresAt: string }>("/user/anonymous", {}).then((res) => {
+    if (res.success && res.data?.userId && res.data.sessionToken) {
       setUserId(res.data.userId);
       setAccountName(buildRandomAccountName(res.data.userId));
+      setAuthInfo({ sessionToken: res.data.sessionToken, expiresAt: res.data.expiresAt }, true);
       return res.data.userId;
     }
     throw new Error(res.message || "无法创建匿名用户");
@@ -223,7 +217,6 @@ export async function ensureUser(): Promise<string> {
 
   return _creatingUser;
 }
-
 export async function sendSmsCode(phone: string) {
   const userId = await ensureUser();
   return post<{ phoneMasked: string; expiresIn: number }>("/auth/sms/send", { phone, userId });
@@ -242,7 +235,7 @@ export async function loginWithSms(phone: string, code: string) {
       phoneMasked: res.data.phoneMasked,
       sessionToken: res.data.sessionToken,
       expiresAt: res.data.expiresAt,
-    });
+    }, true);
   }
   return res;
 }
@@ -462,11 +455,11 @@ export async function submitFeedback(input: {
   pagePath?: string;
   content: string;
   contact?: string;
+  privacyConsent: boolean;
 }) {
   const userId = await ensureUser();
   return post<FeedbackItem>("/feedback", { userId, ...input });
 }
-
 export async function getFeedback(page = 1, pageSize = 10) {
   const userId = await ensureUser();
   return get<{ items: FeedbackItem[]; total: number; page: number; pageSize: number }>(
@@ -534,4 +527,16 @@ export async function payOrderAndGetRecord(orderId: string) {
   const paid = await payOrder(orderId);
   if (!paid.success || !paid.data?.recordId) return paid as any;
   return getRecord(paid.data.recordId);
+}
+
+export async function exportPersonalData() {
+  const userId = await ensureUser();
+  return post<any>("/privacy/export", { userId });
+}
+
+export async function deletePersonalData() {
+  const userId = await ensureUser();
+  const result = await post<{ deletedAt: string }>("/privacy/delete-account", { userId, confirmed: true });
+  if (result.success) clearLocalIdentity();
+  return result;
 }

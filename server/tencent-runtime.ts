@@ -1,4 +1,4 @@
-﻿import mysql, { type Pool, type PoolOptions, type ResultSetHeader, type RowDataPacket } from "mysql2/promise";
+import mysql, { type Pool, type PoolOptions, type ResultSetHeader, type RowDataPacket } from "mysql2/promise";
 import COS from "cos-nodejs-sdk-v5";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -295,4 +295,25 @@ export async function closeTencentRuntime() {
     pool = null;
     poolIdentity = "";
   }
+}
+// 轻量迁移：生产库已初始化时，Docker 的初始化脚本不会再次执行；在 API 启动时
+// 补齐隐私凭证表，避免将恢复凭证落到客户端或明文数据库字段中。
+export async function ensureTencentPrivacySchema() {
+  const mysqlPool = getPool(process.env as RuntimeEnv);
+  if (!mysqlPool) return;
+  await mysqlPool.execute(`
+    CREATE TABLE IF NOT EXISTS account_recovery_tokens (
+      id VARCHAR(96) NOT NULL,
+      user_id VARCHAR(96) NOT NULL,
+      token_hash CHAR(64) NOT NULL,
+      expires_at DATETIME(3) NOT NULL,
+      used_at DATETIME(3) NULL,
+      created_at DATETIME(3) NOT NULL,
+      PRIMARY KEY (id),
+      UNIQUE KEY uq_recovery_token_hash (token_hash),
+      KEY idx_recovery_user_created (user_id, created_at DESC),
+      KEY idx_recovery_expiry (expires_at),
+      CONSTRAINT fk_recovery_user FOREIGN KEY (user_id) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
 }

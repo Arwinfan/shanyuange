@@ -1,15 +1,12 @@
-import { handleOptions, ok, readBody, genId, mockDb, requireDatabaseOrMock } from "../../_shared";
+import { createUserSession, genId, handleOptions, mockDb, ok, requireDatabaseOrMock } from "../../_shared";
 
 export async function onRequestPost(context: any) {
-  const body = await readBody(context.request);
   const userId = genId("anon");
   const now = new Date().toISOString();
-
-  // 检查 D1
-  const db = context.env?.DB;
   const dbModeError = requireDatabaseOrMock(context.env);
   if (dbModeError) return dbModeError;
 
+  const db = context.env?.DB;
   if (db) {
     await db.prepare("INSERT INTO users (id, created_at, updated_at) VALUES (?, ?, ?)")
       .bind(userId, now, now).run();
@@ -17,7 +14,8 @@ export async function onRequestPost(context: any) {
     mockDb().users.push({ id: userId, created_at: now });
   }
 
-  return ok({ userId });
+  const session = await createUserSession(context.env, userId);
+  return ok({ userId, sessionToken: session.token, expiresAt: session.expiresAt });
 }
 
 export async function onRequestOptions() { return handleOptions(); }

@@ -6,6 +6,8 @@ import jsQR from "jsqr";
 import QRCode from "qrcode";
 import {
   bindPhone,
+  deletePersonalData,
+  exportPersonalData,
   getAccountCredentialUrl,
   getAccountName,
   getRecords,
@@ -44,6 +46,8 @@ export default function MyPage() {
   const [qrLoading, setQrLoading] = useState(false);
   const [credentialInput, setCredentialInput] = useState("");
   const [importingCredential, setImportingCredential] = useState(false);
+  const [exportingData, setExportingData] = useState(false);
+  const [deletingData, setDeletingData] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleGenerateCredential = async () => {
@@ -61,7 +65,7 @@ export default function MyPage() {
       });
       setCredentialUrl(url);
       setQrDataUrl(dataUrl);
-      setAccountMessage("账号凭证已生成，请下载二维码或复制链接后妥善保存。");
+      setAccountMessage("账号凭证已生成，有效期 15 分钟且仅可恢复一次，请下载后妥善保存。");
     } catch {
       setAccountMessage("账号凭证生成失败，请稍后重试");
     } finally {
@@ -85,24 +89,27 @@ export default function MyPage() {
   };
 
   useEffect(() => {
-    try {
-      const url = new URL(window.location.href);
-      if (url.searchParams.has("credential")) {
-        const result = importAccountCredential(window.location.href);
-        setAccountMessage(result.success ? "账号凭证已导入，本设备已切换到该账号。" : result.message || "账号凭证无法识别");
-        window.history.replaceState(null, "", "/my");
+    const importFromAddress = async () => {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("credential")) {
+          const result = await importAccountCredential(window.location.href);
+          setAccountMessage(result.success ? "账号凭证已导入，本设备已切换到该账号。" : result.message || "账号凭证无法识别");
+          window.history.replaceState(null, "", "/my");
+        }
+      } catch {
+        // 浏览器地址异常时不影响正常加载。
       }
-    } catch {
-      // 浏览器地址异常时不影响正常加载。
-    }
-    load().catch(() => setLoading(false));
+      load().catch(() => setLoading(false));
+    };
+    void importFromAddress();
   }, []);
 
   const applyAccountCredential = async (input: string) => {
     setImportingCredential(true);
     setAccountMessage("");
     try {
-      const result = importAccountCredential(input);
+      const result = await importAccountCredential(input);
       if (!result.success) {
         setAccountMessage(result.message || "账号凭证无法识别");
         return;
@@ -237,6 +244,50 @@ export default function MyPage() {
     setAccountMessage("账号凭证二维码已生成，请保存到安全位置。");
   };
 
+
+const handleExportData = async () => {
+    setAccountMessage("");
+    setExportingData(true);
+    try {
+      const result = await exportPersonalData();
+      if (!result.success || !result.data) {
+        setAccountMessage(result.message || "数据导出失败，请稍后再试。");
+        return;
+      }
+      const file = new Blob([JSON.stringify(result.data, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${accountName || "善缘阁"}-个人数据.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setAccountMessage("个人数据已导出，请妥善保管该文件。");
+    } catch {
+      setAccountMessage("数据导出失败，请稍后再试。");
+    } finally {
+      setExportingData(false);
+    }
+  };
+
+  const handleDeleteData = async () => {
+    if (!window.confirm("注销后将删除当前账号的记录、绑定信息、反馈和二维码凭证，此操作无法恢复。确定继续吗？")) return;
+    setAccountMessage("");
+    setDeletingData(true);
+    try {
+      const result = await deletePersonalData();
+      if (!result.success) {
+        setAccountMessage(result.message || "注销失败，请稍后再试。");
+        return;
+      }
+      window.location.assign("/");
+    } catch {
+      setAccountMessage("注销失败，请稍后再试。");
+    } finally {
+      setDeletingData(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-xuan text-paper">
       <header className="sticky top-0 z-30 border-b border-gold/10 bg-xuan/95 backdrop-blur">
@@ -278,7 +329,7 @@ export default function MyPage() {
             <div className="rounded-lg border border-gold/15 bg-xuan-surface/45 p-4 space-y-3">
               <div>
                 <p className="text-sm text-paper-dark/70">绑定手机号</p>
-                <p className="mt-1 text-xs text-paper-dark/45">无需短信验证，仅用于账号备注和人工核对。</p>
+                <p className="mt-1 text-xs text-paper-dark/45">手机号仅作为账号备注信息保存，当前不作为登录或找回凭据。</p>
               </div>
               {phoneMasked && (
                 <p className="inline-flex rounded-full border border-gold/20 bg-gold/5 px-3 py-1 text-xs text-gold">
@@ -306,7 +357,7 @@ export default function MyPage() {
 
             <div className="rounded-lg border border-gold/15 bg-xuan-surface/45 p-4 text-center">
               <p className="text-sm text-paper-dark/70">账号凭证二维码</p>
-              <p className="mt-1 text-xs text-paper-dark/45">点击生成后才会显示，请保存到安全位置。</p>
+              <p className="mt-1 text-xs text-paper-dark/45">点击后生成，有效期 15 分钟，仅可恢复一次。</p>
               <div className="mx-auto mt-3 flex size-44 items-center justify-center rounded-lg border border-gold/15 bg-[#f1ead9] p-2">
                 {qrDataUrl ? (
                   <img src={qrDataUrl} alt="账号凭证二维码" className="size-full rounded-md" />
@@ -342,7 +393,7 @@ export default function MyPage() {
 
           {accountMessage && <p className="rounded-md border border-gold/15 bg-gold/5 px-3 py-2 text-xs text-paper-dark/65">{accountMessage}</p>}
           <p className="text-xs leading-relaxed text-paper-dark/45">
-            账号凭证可恢复当前随机账号与历史记录，请勿转发给他人。
+            账号凭证属于敏感恢复凭据：有效期 15 分钟、仅可使用一次，请勿转发给他人。
           </p>
         </section>
 
@@ -355,7 +406,7 @@ export default function MyPage() {
             <input
               value={credentialInput}
               onChange={(event) => setCredentialInput(event.target.value)}
-              placeholder="粘贴账号凭证链接或 sycred_ 开头的凭证"
+              placeholder="粘贴账号凭证链接或 sycred_v2_ 开头的凭证"
               className="h-11 flex-1 rounded-md border border-gold/20 bg-xuan-surface px-3 text-sm text-paper-dark placeholder:text-paper-dark/35 focus:border-gold focus:outline-none"
             />
             <button
@@ -399,6 +450,35 @@ export default function MyPage() {
           </div>
           {message && <p className="text-sm text-vermillion-light">{message}</p>}
           {recovered && <RecordCard item={recovered} expanded />}
+        </section>
+
+
+        <section className="rounded-xl border border-gold/20 bg-xuan-card/70 p-4 space-y-4">
+          <div>
+            <p className="text-sm text-paper-dark/75">隐私与数据控制</p>
+            <p className="mt-1 text-xs leading-relaxed text-paper-dark/45">可下载当前账号的数据副本，也可随时注销并删除当前账号的数据与凭证。</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleExportData}
+              disabled={exportingData || deletingData}
+              className="rounded-md border border-gold/25 px-4 py-2 text-sm text-gold hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {exportingData ? "导出中..." : "导出我的数据"}
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteData}
+              disabled={exportingData || deletingData}
+              className="rounded-md border border-vermillion/45 px-4 py-2 text-sm text-vermillion-light hover:bg-vermillion/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {deletingData ? "注销中..." : "注销并删除数据"}
+            </button>
+            <Link href="/privacy" className="inline-flex items-center rounded-md border border-gold/20 px-4 py-2 text-sm text-paper-dark/65 hover:bg-gold/10 hover:text-gold">
+              查看隐私说明
+            </Link>
+          </div>
         </section>
 
         <section className="rounded-xl border border-gold/20 bg-xuan-card/70 p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
@@ -451,6 +531,7 @@ function formatRecordTime(value?: string) {
 }
 
 function RecordCard({ item, expanded = false }: { item: RecordItem; expanded?: boolean }) {
+
   return (
     <article className="rounded-xl border border-gold/15 bg-xuan-card/65 p-4 space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">

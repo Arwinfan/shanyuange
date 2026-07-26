@@ -1,9 +1,11 @@
 import {
+  createUserSession,
   ensureMockUser,
   ensureUserExists,
   fail,
   genId,
   handleOptions,
+  isUserSessionValid,
   isValidChinaMobile,
   maskPhone,
   mockDb,
@@ -15,11 +17,6 @@ import {
 
 function normalizeCode(code: unknown) {
   return String(code || "").replace(/\D/g, "");
-}
-
-function sessionToken() {
-  const random = crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "") : Math.random().toString(36).slice(2);
-  return `${genId("sess")}_${random}`;
 }
 
 async function mergeD1User(db: any, sourceUserId: string, targetUserId: string) {
@@ -49,7 +46,11 @@ export async function onRequestPost(context: any) {
   const body = await readBody(context.request);
   const phone = normalizePhone(body.phone);
   const code = normalizeCode(body.code);
-  const currentUserId = typeof body.userId === "string" ? body.userId.trim() : "";
+  const requestedUserId = typeof body.userId === "string" ? body.userId.trim() : "";
+  const currentToken = context.request.headers.get("X-User-Token")?.trim() || "";
+  const currentUserId = requestedUserId && currentToken && await isUserSessionValid(context.env, requestedUserId, currentToken)
+    ? requestedUserId
+    : "";
 
   if (!isValidChinaMobile(phone)) return fail("请输入正确的手机号");
   if (!/^\d{6}$/.test(code)) return fail("请输入 6 位验证码");
@@ -59,12 +60,11 @@ export async function onRequestPost(context: any) {
 
   const now = new Date();
   const nowIso = now.toISOString();
-  const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
   const db = context.env?.DB;
 
   if (db) {
     const sms = await db.prepare(
-      "SELECT * FROM sms_codes WHERE phone = ? AND scene = 'login' AND used_at IS NULL ORDER BY created_at DESC LIMIT 1"
+      "SELECT * FROM sms_codes WHERE phone = ? AND scene = 'login' AND used_at IS NULL ORDER BY created_at DESC LIMIT 1",
     ).bind(phone).first();
 
     if (!sms || Date.parse((sms as any).expires_at) < now.getTime()) return fail("验证码已失效，请重新获取");
@@ -78,21 +78,16 @@ export async function onRequestPost(context: any) {
     const targetUserId = (account as any)?.user_id || currentUserId || genId("user");
     await ensureUserExists(db, targetUserId);
 
-    if (account) {
-      await mergeD1User(db, currentUserId, targetUserId);
-    } else {
+    const merged = account ? await mergeD1User(db, currentUserId, targetUserId) : false;
+    if (!account) {
       await db.prepare(
-        "INSERT INTO user_accounts (id, user_id, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO user_accounts (id, user_id, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
       ).bind(genId("acct"), targetUserId, phone, nowIso, nowIso).run();
     }
 
     await db.prepare("UPDATE sms_codes SET used_at = ? WHERE id = ?").bind(nowIso, (sms as any).id).run();
-    const token = sessionToken();
-    await db.prepare(
-      "INSERT INTO user_sessions (id, user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?, ?)"
-    ).bind(genId("session"), targetUserId, token, expiresAt, nowIso).run();
-
-    return ok({ userId: targetUserId, sessionToken: token, expiresAt, phoneMasked: maskPhone(phone), merged: Boolean(account && currentUserId && currentUserId !== targetUserId) });
+    const session = await createUserSession(context.env, targetUserId);
+    return ok({ userId: targetUserId, sessionToken: session.token, expiresAt: session.expiresAt, phoneMasked: maskPhone(phone), merged });
   }
 
   const mock = mockDb();
@@ -108,16 +103,13 @@ export async function onRequestPost(context: any) {
   const targetUserId = account?.user_id || currentUserId || genId("user");
   ensureMockUser(targetUserId);
   const merged = account ? mergeMockUser(currentUserId, targetUserId) : false;
-
   if (!account) {
     mock.accounts.push({ id: genId("acct"), user_id: targetUserId, phone, created_at: nowIso, updated_at: nowIso });
   }
 
   sms.used_at = nowIso;
-  const token = sessionToken();
-  mock.sessions.push({ id: genId("session"), user_id: targetUserId, token, expires_at: expiresAt, created_at: nowIso });
-
-  return ok({ userId: targetUserId, sessionToken: token, expiresAt, phoneMasked: maskPhone(phone), merged });
+  const session = await createUserSession(context.env, targetUserId);
+  return ok({ userId: targetUserId, sessionToken: session.token, expiresAt: session.expiresAt, phoneMasked: maskPhone(phone), merged });
 }
 
 export async function onRequestOptions() {

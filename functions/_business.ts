@@ -297,12 +297,12 @@ export function buildPalmistryReading(input: {
 }) {
   const teacher = MASTER_INFO[getMaster(input.master)];
   const isHand = input.mode === "hand";
-  const imageUrl = input.imageBase64 ? `/r2/palmistry/${input.recordId}.png` : "";
+  const imageRetained = false;
   const preview = {
     summary: isHand
       ? `已按${input.hand === "right" ? "右手后天发展" : "左手先天底色"}建立解读。可见掌色、主线走势与掌丘起伏会作为重点，完整解读需支付后解锁。`
       : "已建立面相解读。会围绕三庭、眉眼、鼻口与下庭等可见特征分段说明，完整解读需支付后解锁。",
-    imageUrl,
+    imageRetained,
   };
 
   const fullResult = {
@@ -328,7 +328,7 @@ export function buildPalmistryReading(input: {
           { title: "当下提醒", text: "相由心转，阶段气色会随休息、情绪与环境变化，宜把解读当作自我观察的提醒。" },
         ],
     advice: teacher.voice,
-    privacyNote: "图片只应被用于本次解读结果，不应复用到其他场景。",
+    privacyNote: "上传原图仅在本次请求内处理，不会保存到服务端或用于其他用途。",
   };
 
   return { preview, fullResult };

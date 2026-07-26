@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { deletePalmistryImage, fortunePalmistry, payOrderAndGetRecord } from "@/lib/api";
+import { fortunePalmistry, payOrderAndGetRecord } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
 
 type Master = "huiming" | "mingxin" | "xuanzhen";
@@ -28,8 +28,7 @@ export default function PalmistryPage() {
   const [unlocking, setUnlocking] = useState(false);
   const [fullResult, setFullResult] = useState<any>(null);
   const [currentRecordId, setCurrentRecordId] = useState("");
-  const [imageDeleted, setImageDeleted] = useState(false);
-  const [deletingImage, setDeletingImage] = useState(false);
+  const [photoConsent, setPhotoConsent] = useState(false);
 
   const handleFile = (file?: File) => {
     if (!file) return;
@@ -49,18 +48,22 @@ export default function PalmistryPage() {
       setFullResult(null);
       setPendingOrder(null);
       setCurrentRecordId("");
-      setImageDeleted(false);
+
     };
     reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
+    if (!photoConsent) {
+      setMessage("请先确认照片由您本人提供或已取得授权，并同意仅用于本次解读。");
+      return;
+    }
     setLoading(true);
     setMessage("");
     setFullResult(null);
     setPendingOrder(null);
     setCurrentRecordId("");
-    setImageDeleted(false);
+
     try {
       const res = await fortunePalmistry({ master, mode, hand: mode === "hand" ? hand : undefined, imageBase64 });
       if (res.success && res.data) {
@@ -94,24 +97,7 @@ export default function PalmistryPage() {
     setUnlocking(false);
   };
 
-  const handleDeleteImage = async () => {
-    if (!currentRecordId) return;
-    setDeletingImage(true);
-    try {
-      const res = await deletePalmistryImage(currentRecordId);
-      if (res.success) {
-        setImageDeleted(true);
-        setImageBase64("");
-        setImageName("");
-        setMessage("原图已清除，已保留本次解读记录。");
-      } else {
-        setMessage(res.message || "原图暂未清除，请稍后重试");
-      }
-    } catch {
-      setMessage("服务暂时不可用，请稍后重试");
-    }
-    setDeletingImage(false);
-  };
+
 
   return (
     <div className="min-h-screen bg-xuan flex flex-col">
@@ -220,6 +206,15 @@ export default function PalmistryPage() {
             </p>
           )}
 
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-gold/15 bg-gold/5 px-3 py-3 text-xs leading-relaxed text-paper-dark/60">
+            <input
+              type="checkbox"
+              checked={photoConsent}
+              onChange={(event) => setPhotoConsent(event.target.checked)}
+              className="mt-0.5 size-4 accent-[#b7443e]"
+            />
+            <span>我确认照片由本人提供或已取得授权，并同意其仅在本次请求中用于生成解读；原图不会保存到服务端或用于其他用途。</span>
+          </label>
           {/* Legal */}
           <div className="space-y-2">
             <p className="text-xs text-paper-dark/40 text-center leading-relaxed">
@@ -235,18 +230,15 @@ export default function PalmistryPage() {
 
           {/* Submit */}
           <div className="text-center">
-            <button disabled={loading || !imageBase64} onClick={handleSubmit}
+            <button disabled={loading || !imageBase64 || !photoConsent} onClick={handleSubmit}
               className="inline-flex items-center justify-center rounded-lg bg-vermillion px-12 py-4 text-xl text-white font-medium tracking-wider shadow-lg shadow-vermillion/20 hover:bg-vermillion-light active:bg-vermillion-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               {loading ? "正在参详特征..." : "开始专业解读"}
             </button>
             {loading && <p className="mt-3 text-sm text-paper-dark/55" role="status" aria-live="polite">正在整理本次解读，请稍候。</p>}
-            <p className="mt-2 text-xs text-paper-dark/40">图片仅用于本次解读，不会用于其他用途。</p>
+            <p className="mt-2 text-xs text-paper-dark/40">原图仅在本次请求内处理，不保存到服务端，也不会用于其他用途。</p>
             {message && <p className="mt-3 text-sm text-emerald-300/80 whitespace-pre-line animate-fadeIn">{message}</p>}
-            {currentRecordId && !imageDeleted && (
-              <button onClick={handleDeleteImage} disabled={deletingImage}
-                className="mt-3 rounded-lg border border-gold/25 bg-xuan-surface/30 px-4 py-2 text-xs text-paper-dark/65 hover:border-gold/40 hover:text-gold disabled:opacity-60">
-                {deletingImage ? "清除中..." : "清除本次上传原图"}
-              </button>
+            {currentRecordId && (
+              <p className="mt-3 text-xs text-emerald-300/75">本次解读已完成，上传原图未被保存。</p>
             )}
             {pendingOrder && (
               <button onClick={handleUnlock} disabled={unlocking}

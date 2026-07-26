@@ -37,6 +37,7 @@ export async function onRequestPost(context: any) {
   const pagePath = readText(body?.pagePath);
   const content = readText(body?.content);
   const contact = readText(body?.contact);
+  const privacyConsent = body?.privacyConsent === true;
 
   if (!userId) return fail("请先完成账号初始化后再提交反馈");
   if (!CATEGORIES.includes(category as (typeof CATEGORIES)[number])) return fail("请选择反馈类型");
@@ -44,6 +45,7 @@ export async function onRequestPost(context: any) {
   if (requireLength(content, 1000, "反馈内容")) return fail("反馈内容不能超过 1000 个字");
   if (requireLength(pagePath, 120, "相关页面")) return fail("相关页面信息过长");
   if (requireLength(contact, 120, "联系方式")) return fail("联系方式不能超过 120 个字");
+  if (!privacyConsent) return fail("请先阅读并同意隐私说明");
 
   const dbModeError = requireDatabaseOrMock(context.env);
   if (dbModeError) return dbModeError;

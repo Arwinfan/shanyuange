@@ -150,3 +150,15 @@ CREATE TABLE IF NOT EXISTS feedback (
 
 CREATE INDEX IF NOT EXISTS idx_feedback_user_created ON feedback(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_status_created ON feedback(status, created_at DESC);
+-- One-time account recovery credentials. Only the SHA-256 digest is stored.
+CREATE TABLE IF NOT EXISTS account_recovery_tokens (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_recovery_user_created ON account_recovery_tokens(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_recovery_expiry ON account_recovery_tokens(expires_at);

@@ -7,8 +7,8 @@ export async function onRequestPost(context: any) {
 
   const missing = requireFields(body || {}, ["userId", "master", "mode"]);
   if (missing) return fail(`${missing} 不能为空`);
-  if (!["huiming","mingxin","xuanzhen"].includes(master)) return fail("请选择师父");
-  if (!["hand","face"].includes(mode)) return fail("请选择手相或面相");
+  if (!["huiming", "mingxin", "xuanzhen"].includes(master)) return fail("请选择师父");
+  if (!["hand", "face"].includes(mode)) return fail("请选择手相或面相");
   if (mode === "hand" && !hand) return fail("请选择左手或右手");
   if (mode === "hand" && !["left", "right"].includes(hand)) return fail("hand 必须是 left/right 之一");
   if (!imageBase64) return fail("请上传一张清晰照片");
@@ -17,9 +17,8 @@ export async function onRequestPost(context: any) {
   const recordId = genId("rec");
   const orderId = genId("ord");
   const now = new Date().toISOString();
-  const imageKey = `palmistry/${recordId}.txt`;
-  const storedRequestData = { ...body, imageBase64: "[data]", imageKey, recordId };
-  const mockRequestData = { ...body, imageKey, recordId };
+  // 原图只在本次请求内用于生成解读，不写入数据库或对象存储。
+  const storedRequestData = { userId, master, mode, hand: hand || null, imageRetained: false, recordId };
   const { preview, fullResult } = buildPalmistryReading({ master, mode, hand, imageBase64, recordId });
 
   const db = context.env?.DB;
@@ -30,9 +29,6 @@ export async function onRequestPost(context: any) {
     await ensureUserExists(db, userId);
     const trial = getSiteTrial(context.env);
     const isTrial = trial.active;
-    if (context.env?.R2?.put) {
-      await context.env.R2.put(imageKey, imageBase64, { httpMetadata: { contentType: "text/plain; charset=utf-8" } });
-    }
     await db.prepare("INSERT INTO service_records (id, user_id, type, status, paid, preview_data, full_data, request_data, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
       .bind(recordId, userId, "fortune_palmistry", isTrial ? "completed" : "pending", isTrial ? 1 : 0, JSON.stringify(preview), JSON.stringify(fullResult), JSON.stringify(storedRequestData), now, now).run();
     if (!isTrial) {
@@ -45,7 +41,7 @@ export async function onRequestPost(context: any) {
   ensureMockUser(userId);
   const trial = getSiteTrial(context.env);
   const isTrial = trial.active;
-  mockDb().records.push({ id: recordId, user_id: userId, type: "fortune_palmistry", status: isTrial ? "completed" : "pending", paid: isTrial ? 1 : 0, preview_data: JSON.stringify(preview), full_data: JSON.stringify(fullResult), request_data: JSON.stringify(mockRequestData), created_at: now });
+  mockDb().records.push({ id: recordId, user_id: userId, type: "fortune_palmistry", status: isTrial ? "completed" : "pending", paid: isTrial ? 1 : 0, preview_data: JSON.stringify(preview), full_data: JSON.stringify(fullResult), request_data: JSON.stringify(storedRequestData), created_at: now });
   if (!isTrial) mockDb().orders.push({ id: orderId, user_id: userId, record_id: recordId, type: "fortune_palmistry", amount: 29.9, status: "pending", created_at: now, paid_at: null });
   return ok({ recordId, orderId: isTrial ? null : orderId, needsPayment: !isTrial, amount: isTrial ? 0 : 29.9, preview, fullResult: isTrial ? fullResult : undefined, trial });
 }

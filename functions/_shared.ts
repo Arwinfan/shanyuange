@@ -7,7 +7,7 @@ export function corsHeaders(origin = "*") {
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key",
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key, X-User-Token",
     "Access-Control-Max-Age": "86400",
   };
 }
@@ -119,6 +119,108 @@ export function genId(prefix: string): string {
   return `${prefix}_${ts}${rand}${_counter}`;
 }
 
+// ---------- 设备会话 / 接口鉴权 ----------
+// userId 仅是数据归属标识，不能单独作为访问凭据。所有私有接口还必须携带
+// 服务端保存的设备会话，避免猜到 userId 后读取或篡改他人记录。
+const SESSION_TTL_DAYS = 180;
+const SESSION_TOKEN_BYTES = 32;
+
+function hex(bytes: Uint8Array) {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export function createOpaqueToken() {
+  const bytes = new Uint8Array(SESSION_TOKEN_BYTES);
+  crypto.getRandomValues(bytes);
+  return hex(bytes);
+}
+
+export async function hashSecret(secret: string) {
+  const bytes = new TextEncoder().encode(secret);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return hex(new Uint8Array(digest));
+}
+
+export function deviceSessionExpiresAt(now = Date.now()) {
+  return new Date(now + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
+export async function createUserSession(env: any, userId: string, expiresAt = deviceSessionExpiresAt()) {
+  const token = createOpaqueToken();
+  const tokenHash = await hashSecret(token);
+  const now = new Date().toISOString();
+  const db = env?.DB;
+
+  if (db) {
+    await db.prepare(
+      "INSERT INTO user_sessions (id, user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?, ?)",
+    ).bind(genId("session"), userId, tokenHash, expiresAt, now).run();
+  } else {
+    mockDb().sessions.push({ id: genId("session"), user_id: userId, token: tokenHash, expires_at: expiresAt, created_at: now });
+  }
+
+  return { token, expiresAt };
+}
+
+export async function isUserSessionValid(env: any, userId: string, token: string) {
+  if (!userId || !token) return false;
+  const tokenHash = await hashSecret(token);
+  const now = new Date().toISOString();
+  const db = env?.DB;
+
+  if (db) {
+    const row = await db.prepare(
+      "SELECT id FROM user_sessions WHERE user_id = ? AND token = ? AND expires_at > ? LIMIT 1",
+    ).bind(userId, tokenHash, now).first();
+    return Boolean(row);
+  }
+
+  return mockDb().sessions.some((session) => (
+    session.user_id === userId && session.token === tokenHash && Date.parse(session.expires_at) > Date.now()
+  ));
+}
+
+async function requestUserId(request: Request) {
+  const url = new URL(request.url);
+  const queryUserId = url.searchParams.get("userId")?.trim();
+  if (queryUserId) return queryUserId;
+
+  if (["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase())) return "";
+  try {
+    const body = await request.clone().json() as { userId?: unknown };
+    return typeof body?.userId === "string" ? body.userId.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+const PUBLIC_API_PATHS = new Set([
+  "/api/health",
+  "/api/ai/health",
+  "/api/almanac",
+  "/api/almanac/today",
+  "/api/user/anonymous",
+  "/api/auth/sms/login",
+  "/api/auth/credential/recover",
+  "/api/order/callback",
+]);
+
+export async function authorizeApiRequest(request: Request, env: any) {
+  const pathname = new URL(request.url).pathname;
+  if (PUBLIC_API_PATHS.has(pathname) || pathname.startsWith("/api/admin/")) return null;
+
+  const userId = await requestUserId(request);
+  const token = request.headers.get("X-User-Token")?.trim() || "";
+  if (!userId || !token) {
+    return fail("为了保护您的记录，请先建立本设备凭证或通过二维码恢复账号。", 401);
+  }
+
+  if (!(await isUserSessionValid(env, userId, token))) {
+    return fail("本设备凭证已失效，请重新建立账号凭证或通过二维码恢复账号。", 401);
+  }
+  return null;
+}
+
 // ---------- 脱敏 ----------
 export function maskName(name: string): string {
   if (!name || name.length === 0) return "***";
@@ -138,6 +240,7 @@ interface MockUsage { id: string; user_id: string; type: string; usage_date: str
 interface MockAccount { id: string; user_id: string; phone: string; created_at: string; updated_at: string; }
 interface MockSmsCode { id: string; phone: string; code: string; scene: string; expires_at: string; used_at: string | null; attempts: number; created_at: string; }
 interface MockSession { id: string; user_id: string; token: string; expires_at: string; created_at: string; }
+interface MockRecoveryCredential { id: string; user_id: string; token_hash: string; expires_at: string; used_at: string | null; created_at: string; }
 interface MockFeedback { id: string; user_id: string; category: string; page_path: string | null; content: string; contact: string | null; status: string; created_at: string; updated_at: string; }
 
 class MockDB {
@@ -150,6 +253,7 @@ class MockDB {
   accounts: MockAccount[] = [];
   smsCodes: MockSmsCode[] = [];
   sessions: MockSession[] = [];
+  recoveryCredentials: MockRecoveryCredential[] = [];
   feedback: MockFeedback[] = [];
 
   // 种子数据: 预置一些心愿灯墙数据

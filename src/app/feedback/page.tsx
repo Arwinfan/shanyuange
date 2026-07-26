@@ -61,6 +61,7 @@ export default function FeedbackPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
 
   const currentHint = useMemo(
     () => CATEGORY_OPTIONS.find((item) => item.value === category)?.hint || "",
@@ -84,6 +85,11 @@ export default function FeedbackPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage("");
+    if (!privacyConsent) {
+      setMessage("请先确认已阅读隐私说明，再提交反馈。");
+      return;
+    }
+
     if (content.trim().length < 5) {
       setMessage("请至少填写 5 个字，让我们知道具体情况。");
       return;
@@ -91,7 +97,7 @@ export default function FeedbackPage() {
 
     setSubmitting(true);
     try {
-      const result = await submitFeedback({ category, pagePath, content, contact });
+      const result = await submitFeedback({ category, pagePath, content, contact, privacyConsent });
       if (!result.success || !result.data) {
         setMessage(result.message || "提交失败，请稍后再试。");
         return;
@@ -102,6 +108,7 @@ export default function FeedbackPage() {
       setContact("");
       setPagePath("");
       setCategory("suggestion");
+      setPrivacyConsent(false);
       setMessage("反馈已收到，感谢你的认真说明。");
     } catch {
       setMessage("提交失败，请稍后再试。");
@@ -186,6 +193,15 @@ export default function FeedbackPage() {
               />
             </label>
 
+            <label className="flex cursor-pointer items-start gap-2 rounded-md border border-gold/15 bg-gold/5 px-3 py-3 text-xs leading-relaxed text-paper-dark/60">
+              <input
+                type="checkbox"
+                checked={privacyConsent}
+                onChange={(event) => setPrivacyConsent(event.target.checked)}
+                className="mt-0.5 size-4 accent-[#b7443e]"
+              />
+              <span>我已阅读 <Link href="/privacy" className="text-gold underline underline-offset-2">《隐私说明》</Link>，同意仅为处理本次反馈而保存所填内容与可选联系方式。</span>
+            </label>
             {message ? <p className="rounded-md border border-gold/15 bg-gold/5 px-3 py-2 text-sm text-paper-dark/70">{message}</p> : null}
 
             <button

@@ -154,3 +154,16 @@ CREATE TABLE IF NOT EXISTS feedback (
   KEY idx_feedback_status_created (status, created_at DESC),
   CONSTRAINT fk_feedback_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS account_recovery_tokens (
+  id VARCHAR(96) NOT NULL,
+  user_id VARCHAR(96) NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  expires_at DATETIME(3) NOT NULL,
+  used_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_recovery_token_hash (token_hash),
+  KEY idx_recovery_user_created (user_id, created_at DESC),
+  KEY idx_recovery_expiry (expires_at),
+  CONSTRAINT fk_recovery_user FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

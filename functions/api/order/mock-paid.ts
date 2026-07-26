@@ -1,28 +1,10 @@
 import { FREE_LIMITS, addMockUsageEvent, addUsageEvent, genId, handleOptions, ok, fail, readBody, mockDb, requireDatabaseOrMock, requireMockPayment } from "../../_shared";
 import { buildFullResultFromRecord } from "../../_business";
-import { enhanceBaziReading, enhanceLotReading, enhanceNamingReading, enhancePalmistryReading } from "../../_llm";
+import { enhanceBaziReading, enhanceLotReading, enhanceNamingReading } from "../../_llm";
 
 function safeJson(text: string | null | undefined) {
   if (!text) return null;
   try { return JSON.parse(text); } catch { return null; }
-}
-
-async function readStoredImage(env: any, requestData: any) {
-  const inlineImage = requestData?.imageBase64;
-  if (inlineImage === "[deleted]") return "";
-  if (typeof inlineImage === "string" && inlineImage && inlineImage !== "[data]") return inlineImage;
-
-  const imageKey = requestData?.imageKey;
-  if (imageKey && env?.R2?.get) {
-    try {
-      const object = await env.R2.get(imageKey);
-      if (object?.text) return await object.text();
-    } catch {
-      return "";
-    }
-  }
-
-  return "";
 }
 
 async function enhancePaidFullResult(env: any, type: string, requestData: any, baseFull: any) {
@@ -31,10 +13,8 @@ async function enhancePaidFullResult(env: any, type: string, requestData: any, b
   if (type === "fortune_draw") return enhanceLotReading(env, requestData, baseFull);
   // 六爻已在起卦时生成完整本地解读，解锁时不再阻塞等待外部模型。
   if (type === "fortune_divination") return baseFull;
-  if (type === "fortune_palmistry") {
-    const imageBase64 = await readStoredImage(env, requestData);
-    return enhancePalmistryReading(env, requestData, imageBase64, baseFull);
-  }
+  if (type === "fortune_palmistry") return baseFull;
+
   return baseFull;
 }
 

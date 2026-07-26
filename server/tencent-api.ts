@@ -1,5 +1,6 @@
 import { createServer, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from "node:http";
-import { closeTencentRuntime, createTencentRuntimeEnv } from "./tencent-runtime";
+import { closeTencentRuntime, createTencentRuntimeEnv, ensureTencentPrivacySchema } from "./tencent-runtime";
+import { authorizeApiRequest } from "../functions/_shared";
 
 import * as health from "../functions/api/health";
 import * as aiHealth from "../functions/api/ai/health";
@@ -10,7 +11,11 @@ import * as userMe from "../functions/api/user/me";
 import * as bindPhone from "../functions/api/auth/phone/bind";
 import * as smsSend from "../functions/api/auth/sms/send";
 import * as smsLogin from "../functions/api/auth/sms/login";
+import * as credentialIssue from "../functions/api/auth/credential/issue";
+import * as credentialRecover from "../functions/api/auth/credential/recover";
 import * as feedback from "../functions/api/feedback/index";
+import * as privacyExport from "../functions/api/privacy/export/index";
+import * as privacyDeleteAccount from "../functions/api/privacy/delete-account/index";
 import * as adminFeedback from "../functions/api/admin/feedback";
 import * as blessingWall from "../functions/api/blessing/wall";
 import * as blessingCreate from "../functions/api/blessing/create";
@@ -55,7 +60,11 @@ const routes: Route[] = [
   { pattern: "/api/auth/phone/bind", module: bindPhone },
   { pattern: "/api/auth/sms/send", module: smsSend },
   { pattern: "/api/auth/sms/login", module: smsLogin },
+  { pattern: "/api/auth/credential/issue", module: credentialIssue },
+  { pattern: "/api/auth/credential/recover", module: credentialRecover },
   { pattern: "/api/feedback", module: feedback },
+  { pattern: "/api/privacy/export", module: privacyExport },
+  { pattern: "/api/privacy/delete-account", module: privacyDeleteAccount },
   { pattern: "/api/admin/feedback", module: adminFeedback },
   { pattern: "/api/blessing/wall", module: blessingWall },
   { pattern: "/api/blessing/create", module: blessingCreate },
@@ -142,13 +151,16 @@ async function dispatch(request: IncomingMessage) {
   if (method === "OPTIONS") {
     return route.module.onRequestOptions?.() || new Response(null, {
       status: 204,
-      headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key" },
+      headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key, X-User-Token" },
     });
   }
 
   const handler = method === "GET" ? route.module.onRequestGet : method === "POST" ? route.module.onRequestPost : undefined;
   if (!handler) return errorResponse(405, "请求方式不支持");
-  return handler({ request: webRequest, env: createTencentRuntimeEnv() });
+  const env = createTencentRuntimeEnv();
+  const authError = await authorizeApiRequest(webRequest, env);
+  if (authError) return authError;
+  return handler({ request: webRequest, env });
 }
 
 const port = Number.parseInt(process.env.API_PORT || process.env.PORT || "8789", 10);
@@ -166,8 +178,16 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(port, host, () => {
-  console.log(`[tencent-api] listening on http://${host}:${port}`);
+async function start() {
+  await ensureTencentPrivacySchema();
+  server.listen(port, host, () => {
+    console.log(`[tencent-api] listening on http://${host}:${port}`);
+  });
+}
+
+start().catch((error) => {
+  console.error("[tencent-api] startup failed", error);
+  process.exit(1);
 });
 
 async function shutdown() {
