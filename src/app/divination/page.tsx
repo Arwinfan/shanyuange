@@ -67,6 +67,10 @@ export default function DivinationPage() {
     setUnlocking(true);
     try {
       const res = await payOrderAndGetRecord(pendingOrder.orderId);
+      if ((res as any).externalCheckout) {
+        setUnlocking(false);
+        return;
+      }
       if (res.success && res.data?.fullResult) {
         setResult(res.data.fullResult);
         setPendingOrder(null);
@@ -333,7 +337,7 @@ function DivinationResult({
       {pendingOrder && (
         <button onClick={onUnlock} disabled={unlocking}
           className="rounded-lg border border-gold/40 bg-gold/10 px-5 py-2.5 text-sm text-gold hover:bg-gold/15 disabled:opacity-60">
-          {unlocking ? "支付处理中..." : `立即支付 ¥${pendingOrder.amount} · 查看完整卦解`}
+          {unlocking ? "正在前往付款页面..." : `前往付款 ¥${pendingOrder.amount} · 查看完整卦解`}
         </button>
       )}
       {!pendingOrder && (

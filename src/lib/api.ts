@@ -3,6 +3,8 @@
 // 统一管理所有后端 API 调用
 // ============================================================
 
+import { resolveStoreProduct } from "@/lib/store-products";
+
 const configuredApiBase = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/+$/, "");
 const API_BASE = configuredApiBase || (
   typeof window !== "undefined" && window.location.hostname === "127.0.0.1" && window.location.port === "3000"
@@ -513,9 +515,9 @@ export async function createOrder(recordId: string, amount: number, type: string
   return post<{ orderId: string; amount: number; status: string }>("/order/create", { userId, recordId, amount, type });
 }
 
+/** 兼容旧页面调用：付款统一交由已配置的外部商品页完成。 */
 export async function payOrder(orderId: string) {
-  const userId = await ensureUser();
-  return post<{ orderId: string; status: string; recordId: string }>("/order/complete", { orderId, userId });
+  return payOrderAndGetRecord(orderId) as any;
 }
 
 export async function getOrder(orderId: string) {
@@ -524,9 +526,25 @@ export async function getOrder(orderId: string) {
 }
 
 export async function payOrderAndGetRecord(orderId: string) {
-  const paid = await payOrder(orderId);
-  if (!paid.success || !paid.data?.recordId) return paid as any;
-  return getRecord(paid.data.recordId);
+  const order = await getOrder(orderId);
+  if (!order.success || !order.data) return order as any;
+
+  const product = resolveStoreProduct(order.data.type, order.data.amount);
+  if (!product) {
+    return { success: false, message: "该服务暂未配置外部付款入口" } as any;
+  }
+
+  if (typeof window !== "undefined") {
+    const checkout = new URL(product.url);
+    checkout.searchParams.set("reference", orderId);
+    window.location.assign(checkout.toString());
+  }
+
+  return {
+    success: false,
+    externalCheckout: true,
+    message: "正在前往外部付款页面，请在付款完成后返回本站查看开通状态",
+  } as any;
 }
 
 export async function exportPersonalData() {

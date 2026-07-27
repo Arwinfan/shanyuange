@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getIncenseStatus,
   offerIncense,
-  payOrder,
+  payOrderAndGetRecord,
   type IncenseOffering,
   type TrialInfo,
 } from "@/lib/api";
@@ -113,19 +113,15 @@ export default function TempleClient() {
     }
   }, [active, loadStatus, now]);
 
-  async function completeOrder(orderId: string) {
+  async function beginExternalCheckout(orderId: string) {
     setSubmitting(true);
-    const paid = await payOrder(orderId);
+    const checkout = await payOrderAndGetRecord(orderId);
     setSubmitting(false);
-    if (!paid.success) {
-      setNotice(paid.message || "暂时无法完成本次供香，请稍后重试。");
+    if (!(checkout as any).externalCheckout) {
+      setNotice(checkout.message || "订单已创建，暂时无法打开付款页面。");
       return;
     }
-    setPendingOrderId(null);
-    setDedication("");
-    setWish("");
-    setNotice("香已点燃，将在 30 分钟内静静燃烧。");
-    await loadStatus();
+    setNotice("正在前往外部付款页面，付款完成后请返回本站等待开通。");
   }
 
   async function createOffering(confirmedPaid = false) {
@@ -154,7 +150,7 @@ export default function TempleClient() {
         setConfirmOpen(true);
         return;
       }
-      await completeOrder(result.data.orderId);
+      await beginExternalCheckout(result.data.orderId);
       return;
     }
 
@@ -167,7 +163,7 @@ export default function TempleClient() {
   async function handlePaidConfirm() {
     setConfirmOpen(false);
     if (pendingOrderId) {
-      await completeOrder(pendingOrderId);
+      await beginExternalCheckout(pendingOrderId);
       return;
     }
     await createOffering(true);

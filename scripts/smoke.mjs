@@ -51,6 +51,12 @@ async function openAndCheck(page, route, name) {
   await assertNoForbidden(page, route);
   await screenshot(page, name);
 }
+async function acceptContentNotice(page) {
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor({ state: "visible", timeout: 10000 });
+  await dialog.getByRole("checkbox").check();
+  await dialog.getByRole("button", { name: "确认并继续" }).click();
+}
 
 async function runDesktopFlows(page) {
   await openAndCheck(page, "/", "desktop-home");
@@ -66,12 +72,14 @@ async function runDesktopFlows(page) {
   await openAndCheck(page, "/lottery", "desktop-lottery");
   await page.locator("textarea").fill("家人身体能否安康");
   await page.getByRole("button", { name: /抽签|求一支签/ }).first().click();
+  await acceptContentNotice(page);
   await page.getByText(/第\s*\d+\s*签/).first().waitFor({ timeout: 90000 });
   await assertNoForbidden(page, "/lottery result");
 
   await openAndCheck(page, "/divination", "desktop-divination");
   await page.locator("textarea").fill("这次出行是否顺利");
   await page.getByRole("button", { name: /抽签|加抽/ }).first().click();
+  await acceptContentNotice(page);
   await page.getByText("卦象解读").waitFor({ timeout: 90000 });
   await assertNoForbidden(page, "/divination result");
 
@@ -90,6 +98,7 @@ async function runDesktopFlows(page) {
   await page.getByPlaceholder("请输入家人姓名").fill("张安");
   await page.getByPlaceholder("请输入您的称呼").fill("善信");
   await page.getByRole("button", { name: "点亮此灯" }).click();
+  await acceptContentNotice(page);
   await page.getByText(/心愿已提交|已点亮/).first().waitFor({ timeout: 30000 });
   await assertNoForbidden(page, "/qifu result");
 
@@ -97,6 +106,7 @@ async function runDesktopFlows(page) {
   const incenseButton = page.locator(".temple-offer-button");
   if (await incenseButton.count() !== 1) throw new Error("一炷清香入口未找到");
   await incenseButton.click();
+  await acceptContentNotice(page);
   await page.locator(".temple-burning-card.is-active").waitFor({ state: "visible", timeout: 30000 });
   if (await page.locator(".temple-incense-stick").count() !== 1) throw new Error("首炷点燃后香炉未显示一炷香");
   await assertNoForbidden(page, "/temple result");

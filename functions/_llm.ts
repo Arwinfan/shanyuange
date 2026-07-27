@@ -377,7 +377,7 @@ export async function enhanceDreamReading(env: any, query: string, fallback: { p
         },
       }),
     },
-  ], { temperature: 0.65, timeoutMs: 35000, feature: "dream" });
+  ], { temperature: 0.65, timeoutMs: 15000, feature: "dream" });
 
   if (result.status !== "ok" || !result.data) {
     return {
@@ -462,7 +462,7 @@ export async function enhanceNamingReading(env: any, input: any, fallbackFull: a
         },
       }),
     },
-  ], { temperature: 0.75, timeoutMs: 45000, feature: "naming" });
+  ], { temperature: 0.75, timeoutMs: 20000, feature: "naming" });
 
   if (result.status !== "ok" || !result.data) {
     return {
@@ -567,7 +567,7 @@ async function enhanceNameEvaluationReading(env: any, input: any, fallbackFull: 
         },
       }),
     },
-  ], { temperature: 0.68, timeoutMs: 70000, feature: "name_evaluation" });
+  ], { temperature: 0.68, timeoutMs: 20000, feature: "name_evaluation" });
 
   if (result.status !== "ok" || !result.data) {
     return {
@@ -669,7 +669,7 @@ export async function enhanceBaziReading(env: any, input: any, fallbackFull: any
         },
       }),
     },
-  ], { temperature: 0.68, timeoutMs: 70000, feature: "bazi" });
+  ], { temperature: 0.68, timeoutMs: 20000, feature: "bazi" });
 
   if (result.status !== "ok" || !result.data) {
     return {
@@ -735,7 +735,7 @@ export async function enhanceLotReading(env: any, input: any, fallbackFull: any)
         },
       }),
     },
-  ], { temperature: 0.7, timeoutMs: 35000, feature: "lottery" });
+  ], { temperature: 0.7, timeoutMs: 8000, feature: "lottery" });
 
   if (result.status !== "ok" || !result.data) {
     return {
@@ -810,7 +810,7 @@ export async function enhanceDivinationReading(env: any, input: any, fallbackFul
         },
       }),
     },
-  ], { temperature: 0.68, timeoutMs: 70000, feature: "divination" });
+  ], { temperature: 0.68, timeoutMs: 8000, feature: "divination" });
 
   if (result.status !== "ok" || !result.data) {
     return {
@@ -911,7 +911,7 @@ export async function enhancePalmistryReading(env: any, input: any, imageBase64:
         { type: "image_url", image_url: { url: imageBase64 } },
       ],
     },
-  ], { temperature: 0.62, timeoutMs: 90000, feature: isFace ? "face_reading" : "palmistry" });
+  ], { temperature: 0.62, timeoutMs: 25000, feature: isFace ? "face_reading" : "palmistry" });
 
   if (result.status !== "ok" || !result.data) {
     return {

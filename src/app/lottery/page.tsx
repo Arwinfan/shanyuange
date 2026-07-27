@@ -83,6 +83,10 @@ export default function LotteryPage() {
     setUnlocking(true);
     try {
       const res = await payOrderAndGetRecord(pendingOrder.orderId);
+      if ((res as any).externalCheckout) {
+        setUnlocking(false);
+        return;
+      }
       if (res.success && res.data?.fullResult) {
         setResult(res.data.fullResult);
         setPendingOrder(null);
@@ -255,7 +259,7 @@ function ResultCard({ result, pendingOrder, unlocking, onUnlock }: { result: any
       {pendingOrder && (
         <button onClick={onUnlock} disabled={unlocking}
           className="rounded-lg border border-gold/40 bg-gold/10 px-5 py-2.5 text-sm text-gold hover:bg-gold/15 disabled:opacity-60">
-          {unlocking ? "正在整理完整签解..." : `立即支付 ¥${pendingOrder.amount} · 查看完整签解`}
+          {unlocking ? "正在前往付款页面..." : `前往付款 ¥${pendingOrder.amount} · 查看完整签解`}
         </button>
       )}
     </section>

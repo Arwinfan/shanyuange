@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createBlessing, getBlessingWall, getUserMe, payOrder } from "@/lib/api";
+import { createBlessing, getBlessingWall, getUserMe, payOrderAndGetRecord } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
 import { ContentNoticeModal } from "@/components/content-notice-modal";
 
@@ -327,12 +327,14 @@ export default function QifuPage() {
       });
       if (res.success) {
         if (res.data?.orderId) {
-          const paid = await payOrder(res.data.orderId);
-          if (!paid.success) {
-            setResultMsg(paid.message || "订单已创建，支付确认失败，请稍后在记录中找回");
-            setSubmitting(false);
-            return;
+          const checkout = await payOrderAndGetRecord(res.data.orderId);
+          if ((checkout as any).externalCheckout) {
+            setResultMsg("正在前往外部付款页面，付款完成后请返回本站等待开通。");
+          } else {
+            setResultMsg(checkout.message || "订单已创建，暂时无法打开付款页面。");
           }
+          setSubmitting(false);
+          return;
         }
         const created: WallItem = {
           recordId: res.data?.recordId,

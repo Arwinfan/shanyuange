@@ -87,6 +87,10 @@ export default function PalmistryPage() {
     setUnlocking(true);
     try {
       const res = await payOrderAndGetRecord(pendingOrder.orderId);
+      if ((res as any).externalCheckout) {
+        setUnlocking(false);
+        return;
+      }
       if (res.success && res.data?.fullResult) {
         setFullResult(res.data.fullResult);
         setPendingOrder(null);
@@ -245,7 +249,7 @@ export default function PalmistryPage() {
             {pendingOrder && (
               <button onClick={handleUnlock} disabled={unlocking}
                 className="mt-4 rounded-lg border border-gold/40 bg-gold/10 px-6 py-3 text-gold hover:bg-gold/15 disabled:opacity-60">
-                {unlocking ? "正在整理完整解读..." : `立即支付 ¥${pendingOrder.amount} · 解锁完整解读`}
+                {unlocking ? "正在前往付款页面..." : `前往付款 ¥${pendingOrder.amount} · 解锁完整解读`}
               </button>
             )}
             {fullResult && <PalmistryFullResult data={fullResult} />}
