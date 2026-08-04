@@ -30,14 +30,17 @@ export async function onRequestPost(context: any) {
   const db = context.env?.DB;
 
   if (db) {
-    const [account, records, lamps, incense, feedback] = await Promise.all([
+    const [account, records, lamps, incense, feedback, wishes, wishLikes, wishReports] = await Promise.all([
       db.prepare("SELECT phone, created_at, updated_at FROM user_accounts WHERE user_id = ? ORDER BY created_at DESC").bind(userId).all(),
       db.prepare("SELECT * FROM service_records WHERE user_id = ? ORDER BY created_at DESC").bind(userId).all(),
       db.prepare("SELECT name_raw, donor_name_raw, relation, lamp_type, duration, wish, created_at FROM blessing_lamps WHERE user_id = ? ORDER BY created_at DESC").bind(userId).all(),
       db.prepare("SELECT dedication, wish, status, started_at, ends_at, created_at FROM incense_offerings WHERE user_id = ? ORDER BY created_at DESC").bind(userId).all(),
       db.prepare("SELECT category, page_path, content, contact, status, created_at, updated_at FROM feedback WHERE user_id = ? ORDER BY created_at DESC").bind(userId).all(),
+      db.prepare("SELECT nickname_raw, category, content, color, status, like_count, created_at, updated_at, deleted_at FROM wish_notes WHERE user_id = ? ORDER BY created_at DESC").bind(userId).all(),
+      db.prepare("SELECT wish_id, created_at FROM wish_likes WHERE user_id = ? ORDER BY created_at DESC").bind(userId).all(),
+      db.prepare("SELECT wish_id, reason, detail, status, created_at, updated_at FROM wish_reports WHERE reporter_id = ? ORDER BY created_at DESC").bind(userId).all(),
     ]);
-    return ok({ generatedAt, account: account.results || [], records: (records.results || []).map(recordPayload), lamps: lamps.results || [], incense: incense.results || [], feedback: feedback.results || [] });
+    return ok({ generatedAt, account: account.results || [], records: (records.results || []).map(recordPayload), lamps: lamps.results || [], incense: incense.results || [], feedback: feedback.results || [], wishes: wishes.results || [], wishLikes: wishLikes.results || [], wishReports: wishReports.results || [] });
   }
 
   const mock = mockDb();
@@ -48,6 +51,9 @@ export async function onRequestPost(context: any) {
     lamps: mock.lamps.filter((item) => item.user_id === userId),
     incense: mock.incenses.filter((item) => item.user_id === userId),
     feedback: mock.feedback.filter((item) => item.user_id === userId),
+    wishes: mock.wishes.filter((item) => item.user_id === userId),
+    wishLikes: mock.wishLikes.filter((item) => item.user_id === userId),
+    wishReports: mock.wishReports.filter((item) => item.reporter_id === userId),
   });
 }
 

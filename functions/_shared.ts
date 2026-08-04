@@ -6,7 +6,7 @@
 export function corsHeaders(origin = "*") {
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key, X-User-Token",
     "Access-Control-Max-Age": "86400",
   };
@@ -242,6 +242,9 @@ interface MockSmsCode { id: string; phone: string; code: string; scene: string; 
 interface MockSession { id: string; user_id: string; token: string; expires_at: string; created_at: string; }
 interface MockRecoveryCredential { id: string; user_id: string; token_hash: string; expires_at: string; used_at: string | null; created_at: string; }
 interface MockFeedback { id: string; user_id: string; category: string; page_path: string | null; content: string; contact: string | null; status: string; created_at: string; updated_at: string; }
+interface MockWish { id: string; user_id: string; nickname_raw: string; nickname_masked: string; category: string; content: string; color: string; status: string; like_count: number; created_at: string; updated_at: string; deleted_at: string | null; }
+interface MockWishLike { id: string; wish_id: string; user_id: string; created_at: string; }
+interface MockWishReport { id: string; wish_id: string; reporter_id: string; reason: string; detail: string | null; status: string; created_at: string; updated_at: string; }
 
 class MockDB {
   users: MockUser[] = [];
@@ -255,6 +258,9 @@ class MockDB {
   sessions: MockSession[] = [];
   recoveryCredentials: MockRecoveryCredential[] = [];
   feedback: MockFeedback[] = [];
+  wishes: MockWish[] = [];
+  wishLikes: MockWishLike[] = [];
+  wishReports: MockWishReport[] = [];
 
   // 种子数据: 预置一些心愿灯墙数据
   constructor() {

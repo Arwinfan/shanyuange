@@ -58,6 +58,46 @@ async function acceptContentNotice(page) {
   await dialog.getByRole("button", { name: "确认并继续" }).click();
 }
 
+async function assertWishScatterWall(page, label) {
+  const notes = page.locator("[data-wish-id]");
+  await notes.first().waitFor({ state: "visible", timeout: 30000 });
+  const noteCount = await notes.count();
+  if (noteCount < 2) throw new Error(`${label} 心愿墙缺少可验证的便利签`);
+
+  const before = await notes.evaluateAll((elements) => elements.map((element) => ({
+    id: element.getAttribute("data-wish-id"),
+    left: element.getAttribute("data-scatter-left"),
+    top: element.getAttribute("data-scatter-top"),
+    rect: element.getBoundingClientRect().toJSON(),
+    zIndex: Number(getComputedStyle(element).zIndex),
+  })));
+  if (new Set(before.map((item) => `${item.left}:${item.top}`)).size < 2) throw new Error(`${label} 便利签未产生随机散落位置`);
+  const hasOverlap = before.some((item, index) => before.slice(index + 1).some((other) => item.rect.left < other.rect.right && item.rect.right > other.rect.left && item.rect.top < other.rect.bottom && item.rect.bottom > other.rect.top));
+  if (!hasOverlap) throw new Error(`${label} 便利签未产生叠加效果`);
+
+  const firstNote = notes.first();
+  const defaultPosition = `${await firstNote.getAttribute("data-scatter-left")}:${await firstNote.getAttribute("data-scatter-top")}`;
+  const noteId = await firstNote.getAttribute("data-wish-id");
+  const noteBox = await firstNote.boundingBox();
+  if (!noteBox || !noteId) throw new Error(`${label} 无法定位可拖拽的便利签`);
+  await page.mouse.move(noteBox.x + noteBox.width / 2, noteBox.y + noteBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(noteBox.x + noteBox.width / 2 + 48, noteBox.y + noteBox.height / 2 + 54, { steps: 5 });
+  await page.mouse.up();
+  const draggedPosition = `${await firstNote.getAttribute("data-scatter-left")}:${await firstNote.getAttribute("data-scatter-top")}`;
+  if (draggedPosition === defaultPosition) throw new Error(`${label} 拖拽后便利签位置未变化`);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const resetNote = page.locator(`[data-wish-id="${noteId}"]`);
+  await resetNote.waitFor({ state: "visible", timeout: 30000 });
+  const resetPosition = `${await resetNote.getAttribute("data-scatter-left")}:${await resetNote.getAttribute("data-scatter-top")}`;
+  if (resetPosition !== defaultPosition) throw new Error(`${label} 刷新后便利签未恢复默认位置`);
+
+  await resetNote.getByRole("button").last().focus();
+  await page.waitForTimeout(50);
+  if (Number(await resetNote.evaluate((element) => getComputedStyle(element).zIndex)) < 50) throw new Error(`${label} 聚焦便利签未提升至最上层`);
+  return defaultPosition;
+}
+
 async function runDesktopFlows(page) {
   await openAndCheck(page, "/", "desktop-home");
   await openAndCheck(page, "/almanac", "desktop-almanac");
@@ -102,6 +142,22 @@ async function runDesktopFlows(page) {
   await page.getByText(/心愿已提交|已点亮/).first().waitFor({ timeout: 30000 });
   await assertNoForbidden(page, "/qifu result");
 
+  await openAndCheck(page, "/wishes", "desktop-wishes");
+  await page.getByRole("button", { name: "写一张心愿" }).click();
+  await page.getByRole("button", { name: "天青色便签纸" }).click();
+  await page.getByPlaceholder("如：念安").fill("念安");
+  await page.getByPlaceholder("写下你此刻最想实现的愿望…").fill("愿家人平安顺遂，日日心安");
+  await page.getByRole("button", { name: "贴上心愿墙" }).click();
+  await page.getByText("便利签已贴上心愿墙").waitFor({ timeout: 30000 });
+  await page.getByText("愿家人平安顺遂，日日心安").first().waitFor({ timeout: 10000 });
+  const publishedWish = page.locator("[data-wish-id]").filter({ hasText: "愿家人平安顺遂，日日心安" }).first();
+  if (!((await publishedWish.getAttribute("style")) || "").includes("background-color: rgb(168, 205, 216)")) throw new Error("选择的便签纸色未生效");
+  const wishPosition = await assertWishScatterWall(page, "桌面端");
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const reloadedPosition = await assertWishScatterWall(page, "桌面端刷新后");
+  if (wishPosition !== reloadedPosition) throw new Error("便利签刷新后未保持固定随机位置");
+  await assertNoForbidden(page, "/wishes result");
+
   await openAndCheck(page, "/temple", "desktop-temple");
   const incenseButton = page.locator(".temple-offer-button");
   if (await incenseButton.count() !== 1) throw new Error("一炷清香入口未找到");
@@ -126,6 +182,8 @@ async function run() {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
   await openAndCheck(mobile, "/", "mobile-home");
   await openAndCheck(mobile, "/qifu", "mobile-qifu");
+  await openAndCheck(mobile, "/wishes", "mobile-wishes");
+  await assertWishScatterWall(mobile, "移动端");
   await openAndCheck(mobile, "/meditation", "mobile-meditation");
   await openAndCheck(mobile, "/temple", "mobile-temple");
 

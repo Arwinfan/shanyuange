@@ -78,6 +78,44 @@
 }
 ```
 
+### 便利签心愿墙
+
+#### GET /api/wishes
+
+公开获取便利签墙，参数：`userId`、`sort=latest|popular`、`page`、`pageSize`。返回便利签卡片、当前账号点赞和归属状态，以及本月发布额度。
+
+#### POST /api/wishes
+
+创建便利签。
+
+```json
+{
+  "userId": "anon_xxx",
+  "nickname": "念安",
+  "category": "health",
+  "content": "愿家人平安顺遂",
+  "color": "sky"
+}
+```
+
+`color` 可选；可选值为 `amber`、`rose`、`jade`、`sky`、`lilac`，未传时由系统自动配色。每个账号每中国自然月最多发布 3 张；服务端会校验分类、纸色、长度及公开内容敏感词。
+
+#### DELETE /api/wishes/:wishId
+
+仅发布者可软删除自己的便利签。请求体：`{ "userId": "anon_xxx" }`。
+
+#### POST /api/wishes/:wishId/like
+
+切换当前账号点赞状态。请求体：`{ "userId": "anon_xxx" }`。
+
+#### POST /api/wishes/:wishId/report
+
+提交一次举报。请求体包含 `userId`、`reason=abuse|privacy|illegal|other` 和可选 `detail`；同一账号对同一便利签只能举报一次。
+
+#### GET /api/admin/wishes / POST /api/admin/wishes
+
+管理员心愿墙治理接口，需要 `X-Admin-Key`。支持查询举报、按举报或内容状态筛选、关键词检索，以及隐藏/恢复便利签和更新举报处理状态。
+
 ---
 
 ## 一、心愿供灯 (qifu)

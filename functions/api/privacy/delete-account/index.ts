@@ -25,6 +25,9 @@ export async function onRequestPost(context: any) {
         if (typeof imageKey === "string" && imageKey) await context.env.R2.delete(imageKey).catch(() => {});
       }));
     }
+    await db.prepare("DELETE FROM wish_reports WHERE reporter_id = ? OR wish_id IN (SELECT id FROM wish_notes WHERE user_id = ?)").bind(userId, userId).run();
+    await db.prepare("DELETE FROM wish_likes WHERE user_id = ? OR wish_id IN (SELECT id FROM wish_notes WHERE user_id = ?)").bind(userId, userId).run();
+    await db.prepare("DELETE FROM wish_notes WHERE user_id = ?").bind(userId).run();
     await db.prepare("DELETE FROM feedback WHERE user_id = ?").bind(userId).run();
     await db.prepare("DELETE FROM daily_usage WHERE user_id = ?").bind(userId).run();
     await db.prepare("DELETE FROM blessing_lamps WHERE user_id = ?").bind(userId).run();
@@ -37,6 +40,10 @@ export async function onRequestPost(context: any) {
     await db.prepare("DELETE FROM users WHERE id = ?").bind(userId).run();
   } else {
     const mock = mockDb();
+    const ownWishIds = new Set(mock.wishes.filter((item) => item.user_id === userId).map((item) => item.id));
+    mock.wishReports = mock.wishReports.filter((item) => item.reporter_id !== userId && !ownWishIds.has(item.wish_id));
+    mock.wishLikes = mock.wishLikes.filter((item) => item.user_id !== userId && !ownWishIds.has(item.wish_id));
+    mock.wishes = mock.wishes.filter((item) => item.user_id !== userId);
     mock.feedback = mock.feedback.filter((item) => item.user_id !== userId);
     mock.usage = mock.usage.filter((item) => item.user_id !== userId);
     mock.lamps = mock.lamps.filter((item) => item.user_id !== userId);

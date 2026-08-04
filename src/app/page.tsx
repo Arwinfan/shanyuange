@@ -60,6 +60,7 @@ const PATHWAYS = [
 ];
 
 const MOBILE_NAV = [
+  ["/wishes", "便利签心愿墙"],
   ["/qifu", "祈愿供灯"],
   ["/almanac", "今日通胜"],
   ["/lottery", "灵签解读"],
@@ -140,7 +141,7 @@ export default function Home() {
             </div>
 
             <div className="academy-stage-actions">
-              <Link href="/qifu" className="academy-primary-link">点亮祈愿灯 <span aria-hidden="true">→</span></Link>
+              <Link href="/wishes" className="academy-primary-link">写一张便利签 <span aria-hidden="true">→</span></Link>
               <Link href="/my" className="academy-plain-link">查看我的记录 <span aria-hidden="true">↗</span></Link>
             </div>
           </div>

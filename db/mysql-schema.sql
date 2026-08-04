@@ -156,6 +156,56 @@ CREATE TABLE IF NOT EXISTS feedback (
   KEY idx_feedback_status_created (status, created_at DESC),
   CONSTRAINT fk_feedback_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wish_notes (
+  id VARCHAR(96) NOT NULL,
+  user_id VARCHAR(96) NOT NULL,
+  nickname_raw VARCHAR(48) NOT NULL,
+  nickname_masked VARCHAR(48) NOT NULL,
+  category VARCHAR(32) NOT NULL,
+  content VARCHAR(640) NOT NULL,
+  color VARCHAR(24) NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'visible',
+  like_count INT NOT NULL DEFAULT 0,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  deleted_at DATETIME(3) NULL,
+  PRIMARY KEY (id),
+  KEY idx_wish_notes_public_created (status, created_at DESC),
+  KEY idx_wish_notes_user_month (user_id, created_at DESC),
+  CONSTRAINT fk_wish_notes_user FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wish_likes (
+  id VARCHAR(96) NOT NULL,
+  wish_id VARCHAR(96) NOT NULL,
+  user_id VARCHAR(96) NOT NULL,
+  created_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_wish_likes_wish_user (wish_id, user_id),
+  KEY idx_wish_likes_wish_created (wish_id, created_at DESC),
+  KEY idx_wish_likes_user (user_id, created_at DESC),
+  CONSTRAINT fk_wish_likes_wish FOREIGN KEY (wish_id) REFERENCES wish_notes(id),
+  CONSTRAINT fk_wish_likes_user FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wish_reports (
+  id VARCHAR(96) NOT NULL,
+  wish_id VARCHAR(96) NOT NULL,
+  reporter_id VARCHAR(96) NOT NULL,
+  reason VARCHAR(32) NOT NULL,
+  detail VARCHAR(960) NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'received',
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_wish_reports_wish_reporter (wish_id, reporter_id),
+  KEY idx_wish_reports_status_created (status, created_at DESC),
+  KEY idx_wish_reports_wish (wish_id, created_at DESC),
+  CONSTRAINT fk_wish_reports_wish FOREIGN KEY (wish_id) REFERENCES wish_notes(id),
+  CONSTRAINT fk_wish_reports_reporter FOREIGN KEY (reporter_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS account_recovery_tokens (
   id VARCHAR(96) NOT NULL,
   user_id VARCHAR(96) NOT NULL,

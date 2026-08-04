@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
 
-type IconName = "home" | "lamp" | "calendar" | "lot" | "bazi" | "dream" | "face" | "name" | "hexagram" | "meditate" | "temple" | "feedback";
+type IconName = "home" | "lamp" | "wish" | "calendar" | "lot" | "bazi" | "dream" | "face" | "name" | "hexagram" | "meditate" | "temple" | "feedback";
 
 type NavItem = {
   href: string;
@@ -17,6 +17,7 @@ const DAILY_ITEMS: NavItem[] = [
   { href: "/", label: "今日修行", icon: "home" },
   { href: "/almanac", label: "今日通胜", icon: "calendar" },
   { href: "/qifu", label: "祈愿供灯", icon: "lamp" },
+  { href: "/wishes", label: "便利签心愿墙", icon: "wish" },
   { href: "/temple", label: "一炷清香", icon: "temple" },
 ];
 
@@ -106,6 +107,7 @@ function SiteGlyph({ name }: { name: IconName }) {
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" {...common}>
       {name === "home" && <><path d="m3 10 9-7 9 7" /><path d="M5.5 9.5V21h13V9.5" /><path d="M9.5 21v-6h5v6" /></>}
       {name === "lamp" && <><path d="M12 3v3" /><path d="M8 7h8" /><path d="M7 7c.2 5 1.6 8.2 5 8.2S16.8 12 17 7" /><path d="M8.5 17h7" /><path d="M12 15.2V21" /><path d="M10.5 21h3" /></>}
+      {name === "wish" && <><path d="M5 4.5h14v13H9l-4 3v-16Z" /><path d="M8.5 9h7M8.5 12.5h5" /></>}
       {name === "calendar" && <><rect x="3.5" y="5" width="17" height="15.5" rx="2" /><path d="M7.5 3v4M16.5 3v4M3.5 9h17M8 13h3M13 13h3M8 17h3" /></>}
       {name === "lot" && <><path d="M7 3h10l-1.2 17H8.2L7 3Z" /><path d="M9 7h6M9.5 11.5h5M10 15.5h4" /></>}
       {name === "bazi" && <><circle cx="12" cy="12" r="8.5" /><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6 6 18" /></>}

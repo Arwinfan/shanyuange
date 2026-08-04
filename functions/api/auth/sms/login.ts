@@ -26,6 +26,11 @@ async function mergeD1User(db: any, sourceUserId: string, targetUserId: string) 
   await db.prepare("UPDATE orders SET user_id = ? WHERE user_id = ?").bind(targetUserId, sourceUserId).run();
   await db.prepare("UPDATE blessing_lamps SET user_id = ? WHERE user_id = ?").bind(targetUserId, sourceUserId).run();
   await db.prepare("UPDATE incense_offerings SET user_id = ? WHERE user_id = ?").bind(targetUserId, sourceUserId).run();
+  await db.prepare("UPDATE wish_notes SET user_id = ? WHERE user_id = ?").bind(targetUserId, sourceUserId).run();
+  await db.prepare("UPDATE OR IGNORE wish_likes SET user_id = ? WHERE user_id = ?").bind(targetUserId, sourceUserId).run();
+  await db.prepare("DELETE FROM wish_likes WHERE user_id = ?").bind(sourceUserId).run();
+  await db.prepare("UPDATE OR IGNORE wish_reports SET reporter_id = ? WHERE reporter_id = ?").bind(targetUserId, sourceUserId).run();
+  await db.prepare("DELETE FROM wish_reports WHERE reporter_id = ?").bind(sourceUserId).run();
   await db.prepare("UPDATE OR IGNORE daily_usage SET user_id = ? WHERE user_id = ?").bind(targetUserId, sourceUserId).run();
   return true;
 }
@@ -38,6 +43,11 @@ function mergeMockUser(sourceUserId: string, targetUserId: string) {
   mock.orders.forEach((item) => { if (item.user_id === sourceUserId) item.user_id = targetUserId; });
   mock.lamps.forEach((item) => { if (item.user_id === sourceUserId) item.user_id = targetUserId; });
   mock.incenses.forEach((item) => { if (item.user_id === sourceUserId) item.user_id = targetUserId; });
+  mock.wishes.forEach((item) => { if (item.user_id === sourceUserId) item.user_id = targetUserId; });
+  mock.wishLikes.forEach((item) => { if (item.user_id === sourceUserId) item.user_id = targetUserId; });
+  mock.wishLikes = mock.wishLikes.filter((item, index, rows) => rows.findIndex((other) => other.wish_id === item.wish_id && other.user_id === item.user_id) === index);
+  mock.wishReports.forEach((item) => { if (item.reporter_id === sourceUserId) item.reporter_id = targetUserId; });
+  mock.wishReports = mock.wishReports.filter((item, index, rows) => rows.findIndex((other) => other.wish_id === item.wish_id && other.reporter_id === item.reporter_id) === index);
   mock.usage.forEach((item) => { if (item.user_id === sourceUserId) item.user_id = targetUserId; });
   return true;
 }

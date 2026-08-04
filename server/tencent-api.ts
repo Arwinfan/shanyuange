@@ -17,6 +17,11 @@ import * as feedback from "../functions/api/feedback/index";
 import * as privacyExport from "../functions/api/privacy/export/index";
 import * as privacyDeleteAccount from "../functions/api/privacy/delete-account/index";
 import * as adminFeedback from "../functions/api/admin/feedback";
+import * as adminWishes from "../functions/api/admin/wishes";
+import * as wishes from "../functions/api/wishes/index";
+import * as wishById from "../functions/api/wishes/[id]";
+import * as wishLike from "../functions/api/wishes/[id]/like";
+import * as wishReport from "../functions/api/wishes/[id]/report";
 import * as blessingWall from "../functions/api/blessing/wall";
 import * as blessingCreate from "../functions/api/blessing/create";
 import * as incenseOffer from "../functions/api/incense/offer";
@@ -42,6 +47,7 @@ type Handler = (context: { request: Request; env: Record<string, unknown> }) => 
 type HandlerModule = {
   onRequestGet?: Handler;
   onRequestPost?: Handler;
+  onRequestDelete?: Handler;
   onRequestOptions?: () => Promise<Response>;
 };
 
@@ -66,6 +72,11 @@ const routes: Route[] = [
   { pattern: "/api/privacy/export", module: privacyExport },
   { pattern: "/api/privacy/delete-account", module: privacyDeleteAccount },
   { pattern: "/api/admin/feedback", module: adminFeedback },
+  { pattern: "/api/admin/wishes", module: adminWishes },
+  { pattern: "/api/wishes", module: wishes },
+  { pattern: /^\/api\/wishes\/[^/]+\/like$/, module: wishLike },
+  { pattern: /^\/api\/wishes\/[^/]+\/report$/, module: wishReport },
+  { pattern: /^\/api\/wishes\/[^/]+$/, module: wishById },
   { pattern: "/api/blessing/wall", module: blessingWall },
   { pattern: "/api/blessing/create", module: blessingCreate },
   { pattern: "/api/incense/offer", module: incenseOffer },
@@ -151,11 +162,11 @@ async function dispatch(request: IncomingMessage) {
   if (method === "OPTIONS") {
     return route.module.onRequestOptions?.() || new Response(null, {
       status: 204,
-      headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key, X-User-Token" },
+      headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key, X-User-Token" },
     });
   }
 
-  const handler = method === "GET" ? route.module.onRequestGet : method === "POST" ? route.module.onRequestPost : undefined;
+  const handler = method === "GET" ? route.module.onRequestGet : method === "POST" ? route.module.onRequestPost : method === "DELETE" ? route.module.onRequestDelete : undefined;
   if (!handler) return errorResponse(405, "请求方式不支持");
   const env = createTencentRuntimeEnv();
   const authError = await authorizeApiRequest(webRequest, env);

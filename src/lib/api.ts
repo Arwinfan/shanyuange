@@ -76,6 +76,10 @@ function post<T = any>(path: string, body: Record<string, any>): Promise<{ succe
   return request<T>("POST", path, body);
 }
 
+function del<T = any>(path: string, body: Record<string, any>): Promise<{ success: boolean; data?: T; message?: string }> {
+  return request<T>("DELETE", path, body);
+}
+
 // ========== 用户管理 ==========
 
 let _cachedUserId: string | null = null;
@@ -285,6 +289,62 @@ export async function getBlessingWall(page = 1, pageSize = 40) {
     `/blessing/wall?page=${page}&pageSize=${pageSize}&userId=${encodeURIComponent(userId)}`
   );
   return res;
+}
+
+// ========== 便利签心愿墙 ==========
+
+export type WishCategory = "health" | "study" | "family" | "wealth" | "other";
+export type WishColor = "amber" | "rose" | "jade" | "sky" | "lilac";
+export type WishSort = "latest" | "popular";
+export type WishReportReason = "abuse" | "privacy" | "illegal" | "other";
+
+export type WishItem = {
+  wishId: string;
+  nickname: string;
+  category: WishCategory;
+  content: string;
+  color: WishColor;
+  likeCount: number;
+  periodLikeCount: number;
+  createdAt: string;
+  isMine: boolean;
+  isLiked: boolean;
+};
+
+export type WishListData = {
+  items: WishItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  sort: WishSort;
+  monthlyLimit: number;
+  monthlyUsed: number;
+  monthlyRemaining: number;
+};
+
+export async function getWishes(sort: WishSort = "latest", page = 1, pageSize = 18) {
+  const userId = await ensureUser();
+  return get<WishListData>(`/wishes?sort=${sort}&page=${page}&pageSize=${pageSize}&userId=${encodeURIComponent(userId)}`);
+}
+
+export async function createWish(input: { nickname: string; category: WishCategory; content: string; color?: WishColor }) {
+  const userId = await ensureUser();
+  return post<{ item: WishItem; monthlyLimit: number; monthlyUsed: number; monthlyRemaining: number }>("/wishes", { userId, ...input });
+}
+
+export async function deleteWish(wishId: string) {
+  const userId = await ensureUser();
+  return del<{ wishId: string; status: "deleted"; deletedAt: string }>(`/wishes/${encodeURIComponent(wishId)}`, { userId });
+}
+
+export async function toggleWishLike(wishId: string) {
+  const userId = await ensureUser();
+  return post<{ wishId: string; liked: boolean; likeCount: number }>(`/wishes/${encodeURIComponent(wishId)}/like`, { userId });
+}
+
+export async function reportWish(wishId: string, input: { reason: WishReportReason; detail?: string }) {
+  const userId = await ensureUser();
+  return post<{ wishId: string; reported: true; status: "received" }>(`/wishes/${encodeURIComponent(wishId)}/report`, { userId, ...input });
 }
 
 export interface IncenseOffering {
