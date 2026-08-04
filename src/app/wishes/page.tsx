@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   createWish,
   deleteWish,
+  getAccountName,
   getWishes,
   reportWish,
   toggleWishLike,
@@ -212,6 +213,11 @@ export default function WishesPage() {
     void load(nextSort, 1, true);
   };
 
+  const openCreateWish = () => {
+    setNickname((current) => current.trim() || getAccountName());
+    setCreateOpen(true);
+  };
+
   const submitWish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
@@ -297,7 +303,7 @@ export default function WishesPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3 border border-gold/20 bg-black/15 p-3 sm:p-4">
             <div className="px-1 text-sm text-paper-dark/75"><span className="font-display text-lg text-gold-light">本月还可发布 <b className="mx-1 text-2xl text-gold">{monthlyRemaining}</b> 张</span><p className="mt-1 text-xs text-paper-dark/45">每月最多 {monthlyLimit} 张</p></div>
-            <button type="button" onClick={() => setCreateOpen(true)} disabled={monthlyRemaining <= 0} className="bg-vermillion px-5 py-3 text-sm font-medium text-paper transition hover:bg-vermillion-light disabled:cursor-not-allowed disabled:opacity-50">{monthlyRemaining <= 0 ? "本月便利签已用完" : "写一张心愿"}</button>
+            <button type="button" onClick={openCreateWish} disabled={monthlyRemaining <= 0} className="bg-vermillion px-5 py-3 text-sm font-medium text-paper transition hover:bg-vermillion-light disabled:cursor-not-allowed disabled:opacity-50">{monthlyRemaining <= 0 ? "本月便利签已用完" : "写一张心愿"}</button>
           </div>
         </section>
 
@@ -321,8 +327,8 @@ export default function WishesPage() {
                 const notePosition = draggedPositions[wish.wishId] || { left: scatter.left, top: scatter.top };
                 const isActive = activeWishId === wish.wishId;
                 const isDragging = draggingWishId === wish.wishId;
-                const baseZIndex = wish.isMine ? 100 + scatter.zIndex : scatter.zIndex;
-                const raisedZIndex = wish.isMine ? 200 : 50;
+                const baseZIndex = wish.isMine ? 60 + scatter.zIndex : scatter.zIndex;
+                const raisedZIndex = wish.isMine ? 90 : 50;
                 return <article
                   key={wish.wishId}
                   data-wish-id={wish.wishId}
