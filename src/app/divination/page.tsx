@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { fortuneDivination, getQuotaToday, payOrderAndGetRecord } from "@/lib/api";
+import { fortuneDivination } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
 import { ContentNoticeModal } from "@/components/content-notice-modal";
 
@@ -20,22 +20,7 @@ export default function DivinationPage() {
   const [question, setQuestion] = useState("");
   const [shaking, setShaking] = useState(false);
   const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
-  const [quotaText, setQuotaText] = useState("1/1");
-  const [trialActive, setTrialActive] = useState(true);
   const [result, setResult] = useState<any>(null);
-  const [pendingOrder, setPendingOrder] = useState<{ orderId: string; amount: number } | null>(null);
-  const [unlocking, setUnlocking] = useState(false);
-
-  const refreshQuota = async () => {
-    const res = await getQuotaToday("fortune_divination");
-    const quota = res.data?.items?.[0];
-    if (quota) setQuotaText(`${quota.remaining}/${quota.total}`);
-    if (res.data?.trial) setTrialActive(res.data.trial.active);
-  };
-
-  useEffect(() => {
-    refreshQuota().catch(() => {});
-  }, []);
 
   const handleShake = async () => {
     if (!question.trim()) {
@@ -44,15 +29,11 @@ export default function DivinationPage() {
     }
     setShaking(true);
     setResult(null);
-    setPendingOrder(null);
     try {
       const res = await fortuneDivination(master, question || undefined);
       await new Promise(r => setTimeout(r, 2000)); // 保留动画时长
       if (res.success) {
         setResult(res.data?.fullResult || res.data?.preview);
-        if (res.data?.orderId) setPendingOrder({ orderId: res.data.orderId, amount: res.data.amount });
-        if (res.data?.quota) setQuotaText(`${res.data.quota.remaining}/${res.data.quota.total}`);
-        if (res.data?.trial) setTrialActive(res.data.trial.active);
       } else {
         setResult({ error: res.message || "起卦失败" });
       }
@@ -62,33 +43,10 @@ export default function DivinationPage() {
     setShaking(false);
   };
 
-  const handleUnlock = async () => {
-    if (!pendingOrder) return;
-    setUnlocking(true);
-    try {
-      const res = await payOrderAndGetRecord(pendingOrder.orderId);
-      if ((res as any).externalCheckout) {
-        setUnlocking(false);
-        return;
-      }
-      if (res.success && res.data?.fullResult) {
-        setResult(res.data.fullResult);
-        setPendingOrder(null);
-      } else {
-        setResult({ error: res.message || "解锁失败，请稍后重试" });
-      }
-    } catch {
-      setResult({ error: "服务暂时不可用，请稍后重试" });
-    }
-    setUnlocking(false);
-  };
-
   const resetResult = () => {
     setResult(null);
-    setPendingOrder(null);
   };
-
-  const ctaLabel = trialActive ? "15 天免费试运营 · 点击抽签" : quotaText.startsWith("0/") ? "今日免费已用完 · 加抽 ¥2.9" : "点击抽签";
+  const ctaLabel = "点击抽签";
 
   return (
     <div className="min-h-screen bg-xuan flex flex-col">
@@ -126,7 +84,7 @@ export default function DivinationPage() {
             <div className="inline-flex flex-wrap items-center gap-2 text-xs">
               <span className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 border border-emerald-500/30 bg-emerald-900/20 text-emerald-300">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 4.5h4.8l-3.9 2.8 1.5 4.7-3.9-2.8-3.9 2.8 1.5-4.7-3.9-2.8h4.8z"/></svg>
-                {trialActive ? <>15 天免费试运营 <span className="font-semibold text-white">进行中</span></> : <>今日免费 <span className="font-semibold text-white">{quotaText}</span></>}
+                当前暂停收费 <span className="font-semibold text-white">可直接查阅</span>
               </span>
             </div>
           </section>
@@ -186,8 +144,8 @@ export default function DivinationPage() {
             </div>
           </section>
 
-          {(result || pendingOrder) && (
-            <DivinationResult result={result} pendingOrder={pendingOrder} unlocking={unlocking} onUnlock={handleUnlock} onReset={resetResult} question={question || "未设问题"} />
+          {result && (
+            <DivinationResult result={result} onReset={resetResult} question={question || "未设问题"} />
           )}
         </div>
       </main>
@@ -221,16 +179,10 @@ function DivinationTube({ shaking }: { shaking: boolean }) {
 
 function DivinationResult({
   result,
-  pendingOrder,
-  unlocking,
-  onUnlock,
   onReset,
   question,
 }: {
   result: any;
-  pendingOrder: { orderId: string; amount: number } | null;
-  unlocking: boolean;
-  onUnlock: () => void;
   onReset: () => void;
   question: string;
 }) {
@@ -334,19 +286,11 @@ function DivinationResult({
 
       {result?.culturalNote && <p className="text-xs leading-relaxed text-paper-dark/40">{result.culturalNote}</p>}
 
-      {pendingOrder && (
-        <button onClick={onUnlock} disabled={unlocking}
-          className="rounded-lg border border-gold/40 bg-gold/10 px-5 py-2.5 text-sm text-gold hover:bg-gold/15 disabled:opacity-60">
-          {unlocking ? "正在前往付款页面..." : `前往付款 ¥${pendingOrder.amount} · 查看完整卦解`}
+      <div className="flex justify-center pt-2">
+        <button onClick={onReset} className="rounded-lg border border-gold/30 bg-xuan-surface/40 px-5 py-2.5 text-sm text-gold hover:bg-gold/10">
+          再摇一卦
         </button>
-      )}
-      {!pendingOrder && (
-        <div className="flex justify-center pt-2">
-          <button onClick={onReset} className="rounded-lg border border-gold/30 bg-xuan-surface/40 px-5 py-2.5 text-sm text-gold hover:bg-gold/10">
-            再摇一卦
-          </button>
-        </div>
-      )}
+      </div>
     </section>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createBlessing, getBlessingWall, getUserMe, payOrderAndGetRecord } from "@/lib/api";
+import { createBlessing, getBlessingWall, payOrderAndGetRecord } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
 import { ContentNoticeModal } from "@/components/content-notice-modal";
 
@@ -258,7 +258,6 @@ export default function QifuPage() {
   const [wallLoading, setWallLoading] = useState(true);
   const [selectedLamp, setSelectedLamp] = useState<WallItem | null>(null);
   const [durationStartDate, setDurationStartDate] = useState<Date | null>(null);
-  const [trialActive, setTrialActive] = useState(true);
   const [sevenDayFreeNextAt, setSevenDayFreeNextAt] = useState<string | null>(null);
 
   const price = DURATIONS.find((d) => d.id === duration)?.price ?? 0;
@@ -297,7 +296,6 @@ export default function QifuPage() {
 
   useEffect(() => {
     setDurationStartDate(new Date());
-    void getUserMe().then((res) => setTrialActive(res.data?.trial?.active ?? false));
     loadWall();
   }, []);
   useEffect(() => {
@@ -565,6 +563,7 @@ export default function QifuPage() {
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {DURATIONS.map((d) => {
   const isSevenDayFree = d.id === "7days";
+  const isPausedFree = d.id === "7days" || d.id === "month";
   const isFreeUnavailable = isSevenDayFree && Boolean(sevenDayFreeNextAt);
   const periodText = isFreeUnavailable && sevenDayFreeNextAt
     ? `下次可用 ${formatShortDate(new Date(sevenDayFreeNextAt))}`
@@ -584,7 +583,7 @@ export default function QifuPage() {
       <p className="mb-0.5 font-display text-base text-gold/90">{d.label}</p>
       <p className="mb-1 text-xs leading-relaxed text-paper-dark/45">{periodText}</p>
       <p className="text-sm font-semibold text-emerald-300">
-        {isSevenDayFree ? "免费 · 7 天一次" : trialActive ? "15 天免费试运营" : `¥${d.price}`}
+        {isSevenDayFree ? "免费 · 7 天一次" : isPausedFree ? "收费暂停 · 暂时免费" : `¥${d.price}`}
       </p>
     </button>
   );
@@ -620,7 +619,7 @@ export default function QifuPage() {
           {/* Submit area */}
           <div className="flex flex-col items-center gap-3 pt-2">
             <p className="text-sm text-paper-dark/60">
-              {duration === "7days" ? "七日供灯免费 · 7 天限一次" : trialActive ? "15 天免费试运营中，本次无需支付" : <>需供奉 <span className="text-vermillion font-semibold text-lg">&yen;{price}</span><span className="ml-1">（数据保管费用）</span></>}
+              {duration === "7days" ? "七日供灯免费 · 7 天限一次" : duration === "month" ? "一月供奉暂时免费" : <>需供奉 <span className="text-vermillion font-semibold text-lg">&yen;{price}</span><span className="ml-1">（数据保管费用）</span></>}
             </p>
             <button
               type="button"

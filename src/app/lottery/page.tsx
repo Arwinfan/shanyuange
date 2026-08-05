@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { fortuneDraw, getQuotaToday, payOrderAndGetRecord } from "@/lib/api";
+import { fortuneDraw } from "@/lib/api";
 import { AccountButton, InstallAppButton, MusicButton } from "@/lib/pwa";
 import { ContentNoticeModal } from "@/components/content-notice-modal";
 
@@ -41,34 +41,15 @@ export default function LotteryPage() {
   const [question, setQuestion] = useState("");
   const [drawing, setDrawing] = useState(false);
   const [contentNoticeOpen, setContentNoticeOpen] = useState(false);
-  const [quotaText, setQuotaText] = useState("1/1");
-  const [trialActive, setTrialActive] = useState(true);
   const [result, setResult] = useState<any>(null);
-  const [pendingOrder, setPendingOrder] = useState<{ orderId: string; amount: number } | null>(null);
-  const [unlocking, setUnlocking] = useState(false);
-
-  const refreshQuota = async () => {
-    const res = await getQuotaToday("fortune_draw");
-    const quota = res.data?.items?.[0];
-    if (quota) setQuotaText(`${quota.remaining}/${quota.total}`);
-    if (res.data?.trial) setTrialActive(res.data.trial.active);
-  };
-
-  useEffect(() => {
-    refreshQuota().catch(() => {});
-  }, []);
 
   const handleDraw = async () => {
     setDrawing(true);
     setResult(null);
-    setPendingOrder(null);
     try {
       const res = await fortuneDraw(master, question || undefined);
       if (res.success) {
         setResult(res.data?.fullResult || res.data?.preview);
-        if (res.data?.orderId) setPendingOrder({ orderId: res.data.orderId, amount: res.data.amount });
-        if (res.data?.quota) setQuotaText(`${res.data.quota.remaining}/${res.data.quota.total}`);
-        if (res.data?.trial) setTrialActive(res.data.trial.active);
       } else {
         setResult({ error: res.message || "抽签失败" });
       }
@@ -76,27 +57,6 @@ export default function LotteryPage() {
       setResult({ error: "服务暂时不可用，请稍后重试" });
     }
     setDrawing(false);
-  };
-
-  const handleUnlock = async () => {
-    if (!pendingOrder) return;
-    setUnlocking(true);
-    try {
-      const res = await payOrderAndGetRecord(pendingOrder.orderId);
-      if ((res as any).externalCheckout) {
-        setUnlocking(false);
-        return;
-      }
-      if (res.success && res.data?.fullResult) {
-        setResult(res.data.fullResult);
-        setPendingOrder(null);
-      } else {
-        setResult({ error: res.message || "解锁失败，请稍后重试" });
-      }
-    } catch {
-      setResult({ error: "服务暂时不可用，请稍后重试" });
-    }
-    setUnlocking(false);
   };
 
   return (
@@ -157,7 +117,7 @@ export default function LotteryPage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2l1.5 4.5h4.8l-3.9 2.8 1.5 4.7-3.9-2.8-3.9 2.8 1.5-4.7-3.9-2.8h4.8z"/>
                 </svg>
-                {trialActive ? <>15 天免费试运营 <span className="font-semibold text-white">进行中</span></> : <>今日免费 <span className="font-semibold text-white">{quotaText}</span></>}
+                当前暂停收费 <span className="font-semibold text-white">可直接查阅</span>
               </span>
             </div>
           </section>
@@ -226,8 +186,8 @@ export default function LotteryPage() {
           </div>
 
             {drawing && <p className="mt-3 text-center text-sm text-paper-dark/55" role="status" aria-live="polite">正在整理签文与典籍参考，请稍候。</p>}
-          {(result || pendingOrder) && (
-            <ResultCard result={result} pendingOrder={pendingOrder} unlocking={unlocking} onUnlock={handleUnlock} />
+          {result && (
+            <ResultCard result={result} />
           )}
         </div>
       </main>
@@ -240,7 +200,7 @@ export default function LotteryPage() {
   );
 }
 
-function ResultCard({ result, pendingOrder, unlocking, onUnlock }: { result: any; pendingOrder: { orderId: string; amount: number } | null; unlocking: boolean; onUnlock: () => void }) {
+function ResultCard({ result }: { result: any }) {
   if (result?.error) {
     return <p className="rounded-lg border border-vermillion/30 bg-vermillion/10 p-4 text-sm text-vermillion-light">{result.error}</p>;
   }
@@ -256,12 +216,6 @@ function ResultCard({ result, pendingOrder, unlocking, onUnlock }: { result: any
       {result?.interpretation && <p className="text-sm leading-relaxed text-paper-dark/70">{result.interpretation}</p>}
       {result?.advice && <p className="text-sm leading-relaxed text-paper-dark/60">建议：{result.advice}</p>}
       {result?.culturalNote && <p className="text-xs leading-relaxed text-paper-dark/40">{result.culturalNote}</p>}
-      {pendingOrder && (
-        <button onClick={onUnlock} disabled={unlocking}
-          className="rounded-lg border border-gold/40 bg-gold/10 px-5 py-2.5 text-sm text-gold hover:bg-gold/15 disabled:opacity-60">
-          {unlocking ? "正在前往付款页面..." : `前往付款 ¥${pendingOrder.amount} · 查看完整签解`}
-        </button>
-      )}
     </section>
   );
 }

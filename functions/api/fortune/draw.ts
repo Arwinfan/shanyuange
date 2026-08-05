@@ -42,7 +42,7 @@ export async function onRequestPost(context: any) {
     await ensureUserExists(db, userId);
     const trial = getSiteTrial(context.env);
     const used = await getFreeUsageCount(db, userId, type);
-    const isFree = trial.active || used < quota.total;
+    const isFree = true;
     const status = isFree ? "completed" : "pending";
     const paid = isFree ? 1 : 0;
     const fullResult = isFree ? await enhanceLotReading(context.env, body, built.fullResult) : built.fullResult;
@@ -62,7 +62,7 @@ export async function onRequestPost(context: any) {
     ensureMockUser(userId);
     const trial = getSiteTrial(context.env);
     const used = getMockFreeUsageCount(userId, type);
-    const isFree = trial.active || used < quota.total;
+    const isFree = true;
     const fullResult = isFree ? await enhanceLotReading(context.env, body, built.fullResult) : built.fullResult;
     mockDb().records.push({ id: recordId, user_id: userId, type, status: isFree ? "completed" : "pending", paid: isFree ? 1 : 0, preview_data: JSON.stringify(preview), full_data: JSON.stringify(fullResult), request_data: JSON.stringify({ ...body, billing: { free: isFree, trial: trial.active } }), created_at: now });
     if (isFree) {

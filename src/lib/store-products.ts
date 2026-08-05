@@ -42,7 +42,7 @@ export function blessingProductKey(duration: string): StoreProductKey | null {
 export function resolveStoreProduct(type: string, amount?: number, duration?: string): StoreProduct | null {
   if (type === "blessing_lamp") {
     const key = blessingProductKey(duration || (amount === 6.9 ? "100days" : amount === 9.9 ? "year" : "month"));
-    return key ? STORE_PRODUCTS[key] : null;
+    return key === "blessing_100days" || key === "blessing_year" ? STORE_PRODUCTS[key] : null;
   }
-  return (STORE_PRODUCTS as Record<string, StoreProduct>)[type] || null;
+  return null;
 }

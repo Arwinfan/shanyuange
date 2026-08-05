@@ -60,7 +60,7 @@ export async function onRequestPost(context: any) {
     }
     const freeResult = await db.prepare("SELECT COUNT(*) AS total FROM incense_offerings WHERE user_id = ? AND is_free = 1").bind(userId).first();
     isFirstFree = Number((freeResult as any)?.total || 0) === 0;
-    isFree = trial.active || isFirstFree;
+    isFree = true;
   } else {
     ensureMockUser(userId);
     trial = getSiteTrial(context.env);
@@ -75,7 +75,7 @@ export async function onRequestPost(context: any) {
       return fail("香炉中已有三炷清香，请待其中一炷燃尽后再供香。", 409);
     }
     isFirstFree = !mock.incenses.some((item) => item.user_id === userId && item.is_free === 1);
-    isFree = trial.active || isFirstFree;
+    isFree = true;
   }
 
   const amount = isFree ? 0 : INCENSE_PRICE;

@@ -41,7 +41,7 @@ export async function onRequestPost(context: any) {
     await ensureUserExists(db, userId);
     const trial = getSiteTrial(context.env);
     const used = await getFreeUsageCount(db, userId, type);
-    const isFree = trial.active || used < quota.total;
+    const isFree = true;
     // 六爻的起卦和基础卦解均由本地规则生成，首屏不等待外部模型响应。
     const fullResult = built.fullResult;
     await context.env.DB.prepare("INSERT INTO service_records (id, user_id, type, status, paid, preview_data, full_data, request_data, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
@@ -57,7 +57,7 @@ export async function onRequestPost(context: any) {
     ensureMockUser(userId);
     const trial = getSiteTrial(context.env);
     const used = getMockFreeUsageCount(userId, type);
-    const isFree = trial.active || used < quota.total;
+    const isFree = true;
     // Mock 模式与数据库模式保持一致，确保抽卦可立即完成。
     const fullResult = built.fullResult;
     mockDb().records.push({ id: recordId, user_id: userId, type, status: isFree ? "completed" : "pending", paid: isFree ? 1 : 0, preview_data: JSON.stringify(preview), full_data: JSON.stringify(fullResult), request_data: JSON.stringify({ ...body, billing: { free: isFree, trial: trial.active } }), created_at: now });

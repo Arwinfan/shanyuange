@@ -28,7 +28,7 @@ export async function onRequestPost(context: any) {
   if (db) {
     await ensureUserExists(db, userId);
     const trial = getSiteTrial(context.env);
-    const isTrial = trial.active;
+    const isTrial = true; // 收费暂停期间，完整解读直接提供。
     await db.prepare("INSERT INTO service_records (id, user_id, type, status, paid, preview_data, full_data, request_data, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
       .bind(recordId, userId, "fortune_palmistry", isTrial ? "completed" : "pending", isTrial ? 1 : 0, JSON.stringify(preview), JSON.stringify(fullResult), JSON.stringify(storedRequestData), now, now).run();
     if (!isTrial) {
@@ -40,7 +40,7 @@ export async function onRequestPost(context: any) {
 
   ensureMockUser(userId);
   const trial = getSiteTrial(context.env);
-  const isTrial = trial.active;
+  const isTrial = true; // 收费暂停期间，完整解读直接提供。
   mockDb().records.push({ id: recordId, user_id: userId, type: "fortune_palmistry", status: isTrial ? "completed" : "pending", paid: isTrial ? 1 : 0, preview_data: JSON.stringify(preview), full_data: JSON.stringify(fullResult), request_data: JSON.stringify(storedRequestData), created_at: now });
   if (!isTrial) mockDb().orders.push({ id: orderId, user_id: userId, record_id: recordId, type: "fortune_palmistry", amount: 29.9, status: "pending", created_at: now, paid_at: null });
   return ok({ recordId, orderId: isTrial ? null : orderId, needsPayment: !isTrial, amount: isTrial ? 0 : 29.9, preview, fullResult: isTrial ? fullResult : undefined, trial });

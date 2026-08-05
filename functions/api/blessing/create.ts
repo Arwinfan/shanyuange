@@ -66,7 +66,7 @@ export async function onRequestPost(context: any) {
     }
 
     const trial = getSiteTrial(context.env);
-    const isFree = trial.active || duration === FREE_SEVEN_DAY_DURATION;
+    const isFree = duration === FREE_SEVEN_DAY_DURATION || duration === "month";
     const chargedAmount = isFree ? 0 : amount;
     await db.prepare("INSERT INTO service_records (id, user_id, type, status, paid, preview_data, full_data, request_data, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
       .bind(recordId, userId, "blessing_lamp", isFree ? "completed" : "pending", isFree ? 1 : 0, JSON.stringify(preview), JSON.stringify(fullResult), JSON.stringify(body), now, now).run();
@@ -90,7 +90,7 @@ export async function onRequestPost(context: any) {
   }
 
   const trial = getSiteTrial(context.env);
-  const isFree = trial.active || duration === FREE_SEVEN_DAY_DURATION;
+  const isFree = duration === FREE_SEVEN_DAY_DURATION || duration === "month";
   const chargedAmount = isFree ? 0 : amount;
   mockDb().records.push({ id: recordId, user_id: userId, type: "blessing_lamp", status: isFree ? "completed" : "pending", paid: isFree ? 1 : 0, preview_data: JSON.stringify(preview), full_data: JSON.stringify(fullResult), request_data: JSON.stringify(body), created_at: now });
   mockDb().lamps.push({ id: lampId, record_id: recordId, user_id: userId, name_raw: name, name_masked: maskedName, donor_name_raw: donorName || null, donor_name_masked: maskedDonor, relation, lamp_type: lampType, duration, wish: wish || null, amount: chargedAmount, paid: isFree ? 1 : 0, created_at: now, expires_at: expiresAt });

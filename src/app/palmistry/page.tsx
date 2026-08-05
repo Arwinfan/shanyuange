@@ -70,7 +70,7 @@ export default function PalmistryPage() {
       const res = await fortunePalmistry({ master, mode, hand: mode === "hand" ? hand : undefined, imageBase64 });
       if (res.success && res.data) {
         setCurrentRecordId(res.data.recordId);
-        setMessage(`${res.data.preview.summary}${res.data.needsPayment ? `\\n\\n支付 ¥${res.data.amount} 可解锁完整解读` : "\n\n15 天免费试运营中，完整解读已解锁"}`);
+        setMessage(`${res.data.preview.summary}${res.data.needsPayment ? `\\n\\n支付 ¥${res.data.amount} 可解锁完整解读` : "\n\n当前暂停收费，完整解读已提供"}`);
         if (res.data.fullResult) setFullResult(res.data.fullResult);
         if (res.data.orderId) setPendingOrder({ orderId: res.data.orderId, amount: res.data.amount });
       } else {
