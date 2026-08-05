@@ -145,7 +145,7 @@ export default function TempleClient() {
           <h1 id="temple-title">以一炷香，安放心中所念</h1>
           <p className="temple-hero-lede">一念起，香火相续。为自己、家人或心中所念之人敬上一炷清香，让心意有一处安放。</p>
           <div className="temple-hero-notes" aria-label="供香说明">
-            <span>当前暂停收费</span>
+            <span>免费敬香</span>
             <i />
             <span>可随时敬香</span>
             <i />
@@ -200,7 +200,7 @@ export default function TempleClient() {
             ) : (
               <div className="temple-active-copy">
                 <strong>静候一念香起</strong>
-                <span>当前暂停收费，点燃后开始 30 分钟计时</span>
+                <span>免费敬香，点燃后开始 30 分钟计时</span>
               </div>
             )}
           </aside>
@@ -227,7 +227,7 @@ export default function TempleClient() {
                   <p>{item.wish || "愿心中所念，安稳明朗。"}</p>
                 </div>
                 <div className="temple-history-meta">
-                  <span>{item.amount === 0 ? "暂停收费" : "¥2.9"}</span>
+                  <span>{item.amount === 0 ? "免费" : "¥2.9"}</span>
                   <time>{formatDate(item.startedAt || item.createdAt)}</time>
                 </div>
               </article>

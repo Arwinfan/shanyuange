@@ -583,7 +583,7 @@ export default function QifuPage() {
       <p className="mb-0.5 font-display text-base text-gold/90">{d.label}</p>
       <p className="mb-1 text-xs leading-relaxed text-paper-dark/45">{periodText}</p>
       <p className="text-sm font-semibold text-emerald-300">
-        {isSevenDayFree ? "免费 · 7 天一次" : isPausedFree ? "收费暂停 · 暂时免费" : `¥${d.price}`}
+        {isSevenDayFree ? "免费 · 7 天一次" : isPausedFree ? "免费" : `¥${d.price}`}
       </p>
     </button>
   );
@@ -619,7 +619,7 @@ export default function QifuPage() {
           {/* Submit area */}
           <div className="flex flex-col items-center gap-3 pt-2">
             <p className="text-sm text-paper-dark/60">
-              {duration === "7days" ? "七日供灯免费 · 7 天限一次" : duration === "month" ? "一月供奉暂时免费" : <>需供奉 <span className="text-vermillion font-semibold text-lg">&yen;{price}</span><span className="ml-1">（数据保管费用）</span></>}
+              {duration === "7days" ? "七日供灯免费 · 7 天限一次" : duration === "month" ? "一月供奉免费" : <>需供奉 <span className="text-vermillion font-semibold text-lg">&yen;{price}</span><span className="ml-1">（数据保管费用）</span></>}
             </p>
             <button
               type="button"

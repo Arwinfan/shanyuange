@@ -117,7 +117,7 @@ export default function LotteryPage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2l1.5 4.5h4.8l-3.9 2.8 1.5 4.7-3.9-2.8-3.9 2.8 1.5-4.7-3.9-2.8h4.8z"/>
                 </svg>
-                当前暂停收费 <span className="font-semibold text-white">可直接查阅</span>
+                免费 <span className="font-semibold text-white">可直接查阅</span>
               </span>
             </div>
           </section>
